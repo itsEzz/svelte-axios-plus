@@ -1,3 +1,23 @@
-<h1>Welcome to your library project</h1>
-<p>Create your package using @sveltejs/package and preview/showcase your work with SvelteKit</p>
-<p>Visit <a href="https://kit.svelte.dev">kit.svelte.dev</a> to read the documentation</p>
+<h1>Welcome to svelte-axios-plus</h1>
+<p>
+	Visit <a href="https://github.com/itsEzz/svelte-axios-plus/blob/master/README.md">Github</a> to read
+	the full documentation.
+</p>
+<p>Checkout the svelte-axios-plus examples shown in the README in action:</p>
+<ul>
+	<li>
+		<a href="/quickstart">Quickstart</a>
+	</li>
+	<li>
+		<a href="/configuration">Configuration</a>
+	</li>
+	<li>
+		<a href="/manual-requests">Manual Requests</a>
+	</li>
+	<li>
+		<a href="/manual-cancellation">Manual Cancellation</a>
+	</li>
+	<li>
+		<a href="/multiple-hook-instances">Multiple Hook Instances</a>
+	</li>
+</ul>
