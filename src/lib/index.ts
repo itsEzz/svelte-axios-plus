@@ -13,7 +13,6 @@ import { useEffect } from './useEffect.js';
 interface AxiosPlusOptions {
 	manual?: boolean;
 	useCache?: boolean;
-	ssr?: boolean;
 	autoCancel?: boolean;
 }
 
@@ -44,7 +43,6 @@ interface MakeAxiosPlus<T> {
 		) => Promise<AxiosResponse<T>>,
 		() => void
 	];
-	__ssrPromises: Promise<AxiosResponse<T>>[];
 	resetConfigure(): void;
 	configure(options?: AxiosPlusOptionsConfig): void;
 	clearCache(): void;
@@ -59,7 +57,6 @@ interface AxiosPlusAction<T> {
 const DEFAULT_OPTIONS: AxiosPlusOptions = {
 	manual: false,
 	useCache: true,
-	ssr: true,
 	autoCancel: true
 };
 
@@ -73,7 +70,7 @@ const axiosPlus: MakeAxiosPlus<any> = makeAxiosPlus();
 
 export default axiosPlus;
 
-export const { __ssrPromises, resetConfigure, configure, clearCache } = axiosPlus;
+export const { resetConfigure, configure, clearCache } = axiosPlus;
 
 function isEvent(event: any) {
 	return event instanceof Event;
@@ -100,7 +97,6 @@ export function makeAxiosPlus(configureOptions?: AxiosPlusOptionsConfig): MakeAx
 	let cache: LRUCache<any, any>;
 	let axiosInstance: AxiosInstance;
 	let defaultOptions: AxiosPlusOptions;
-	const __ssrPromises: Promise<AxiosResponse<any>>[] = [];
 
 	function resetConfigure(): void {
 		cache = new LRUCache({ max: 500, ttl: 1000 * 60 });
@@ -130,7 +126,6 @@ export function makeAxiosPlus(configureOptions?: AxiosPlusOptionsConfig): MakeAx
 	}
 
 	return Object.assign(svelteAxiosPlus, {
-		__ssrPromises,
 		resetConfigure,
 		configure,
 		clearCache
@@ -261,10 +256,6 @@ export function makeAxiosPlus(configureOptions?: AxiosPlusOptionsConfig): MakeAx
 			createInitialState(config, options)
 		);
 		let abortController: AbortController;
-
-		if (typeof window === 'undefined' && options.ssr && !options.manual) {
-			axiosPlus.__ssrPromises.push(axiosInstance(config));
-		}
 
 		const cancelOutstandingRequest = (): void => {
 			if (abortController) {
