@@ -1,3 +1,8 @@
+# WIP Notice
+
+> [!IMPORTANT]  
+> This library is still in development and has not yet been published to npm.
+
 # svelte-axios-plus
 
 Axios with some additional features to make working with request even more simple and better.   
@@ -39,9 +44,9 @@ Axios with some additional features to make working with request even more simpl
 
 ### API
 <!-- no toc -->
-- [axiosPlus(url|config, options)](#axiosplusurlconfig-options)
-- [configure({ axios, cache, defaultOptions })](#configure-axios-cache-defaultoptions)
-- [makeAxiosPlus({ axios, cache, defaultOptions })](#makeaxiosplus-axios-cache-defaultoptions)
+- [axiosPlus](#axiosplusurlconfig-options)
+- [configure](#configure-axios-cache-defaultoptions-)
+- [makeAxiosPlus](#makeaxiosplus-axios-cache-defaultoptions-)
 
 ### Guides
 <!-- no toc -->
