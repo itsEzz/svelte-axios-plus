@@ -20,8 +20,8 @@ devDependencies:
     specifier: ^1.30.3
     version: 1.30.3(svelte@4.2.8)(vite@4.5.0)
   '@sveltejs/package':
-    specifier: ^2.2.4
-    version: 2.2.4(svelte@4.2.8)(typescript@5.3.3)
+    specifier: ^2.2.5
+    version: 2.2.5(svelte@4.2.8)(typescript@5.3.3)
   '@typescript-eslint/eslint-plugin':
     specifier: ^6.15.0
     version: 6.15.0(@typescript-eslint/parser@6.16.0)(eslint@8.56.0)(typescript@5.3.3)
@@ -432,8 +432,8 @@ packages:
       - supports-color
     dev: true
 
-  /@sveltejs/package@2.2.4(svelte@4.2.8)(typescript@5.3.3):
-    resolution: {integrity: sha512-Mu0YeLCEM76BM36rqtPSw1sMXW+GS2t0eGaiQ0/ZHWXgte03OIdkQogCKzSxCWXmj0qyY1udTB2oZDZ7MkGsRw==}
+  /@sveltejs/package@2.2.5(svelte@4.2.8)(typescript@5.3.3):
+    resolution: {integrity: sha512-H0dFDrp7b/tr4zrUzOfqPKHG8y6ceNlGKPfSpp4ym1kTPWP79Mea5rvDlcmsbOS26FmHN/vttubalBdOCGA6qA==}
     engines: {node: ^16.14 || >=18}
     hasBin: true
     peerDependencies:
