@@ -22,10 +22,15 @@ interface AxiosPlusOptions {
 	autoCancel?: boolean;
 }
 
+interface AxiosPlusLoadOptions {
+	useCache?: boolean;
+}
+
 interface AxiosPlusOptionsConfig extends AxiosPlusOptions {
 	axios?: AxiosInstance;
 	cache?: LRUCache<any, any>;
 	defaultOptions?: AxiosPlusOptions;
+	defaultLoadOptions?: AxiosPlusLoadOptions;
 }
 
 interface AxiosPlusState<T> {
@@ -52,6 +57,12 @@ interface MakeAxiosPlus<T> {
 	resetConfigure(): void;
 	configure(options?: AxiosPlusOptionsConfig): void;
 	clearCache(): void;
+	load(
+		config: AxiosRequestConfig<T> | string,
+		options?: AxiosPlusLoadOptions
+	): Promise<
+		[{ data: T | undefined; error: AxiosError<T> | null; response?: AxiosResponse<T> | undefined }]
+	>;
 }
 
 interface AxiosPlusAction<T> {
@@ -66,6 +77,10 @@ const DEFAULT_OPTIONS: AxiosPlusOptions = {
 	autoCancel: true
 };
 
+const DEFAULT_LOAD_OPTIONS: AxiosPlusOptions = {
+	useCache: true
+};
+
 const actions = {
 	REQUEST_START: 'REQUEST_START',
 	REQUEST_END: 'REQUEST_END',
@@ -76,7 +91,7 @@ const axiosPlus: MakeAxiosPlus<any> = makeAxiosPlus();
 
 export default axiosPlus;
 
-export const { resetConfigure, configure, clearCache } = axiosPlus;
+export const { resetConfigure, configure, clearCache, load } = axiosPlus;
 
 function useEffect(callback: (() => CallableFunction) | (() => void), deps?: () => any[]) {
 	let cleanupCallback: CallableFunction | void;
@@ -155,11 +170,13 @@ export function makeAxiosPlus(configureOptions?: AxiosPlusOptionsConfig): MakeAx
 	let cache: LRUCache<any, any>;
 	let axiosInstance: AxiosInstance;
 	let defaultOptions: AxiosPlusOptions;
+	let defaultLoadOptions: AxiosPlusLoadOptions;
 
 	function resetConfigure(): void {
 		cache = new LRUCache({ max: 500, ttl: 1000 * 60 });
 		axiosInstance = StaticAxios;
 		defaultOptions = DEFAULT_OPTIONS;
+		defaultLoadOptions = DEFAULT_LOAD_OPTIONS;
 	}
 
 	function configure(options: AxiosPlusOptionsConfig = {}): void {
@@ -174,6 +191,10 @@ export function makeAxiosPlus(configureOptions?: AxiosPlusOptionsConfig): MakeAx
 		if (options.defaultOptions !== undefined) {
 			defaultOptions = { ...DEFAULT_OPTIONS, ...options.defaultOptions };
 		}
+
+		if (options.defaultLoadOptions !== undefined) {
+			defaultLoadOptions = { ...DEFAULT_LOAD_OPTIONS, ...options.defaultLoadOptions };
+		}
 	}
 
 	resetConfigure();
@@ -186,7 +207,8 @@ export function makeAxiosPlus(configureOptions?: AxiosPlusOptionsConfig): MakeAx
 	return Object.assign(svelteAxiosPlus, {
 		resetConfigure,
 		configure,
-		clearCache
+		clearCache,
+		load
 	});
 
 	function tryStoreInCache<T>(config: AxiosRequestConfig<T>, response: AxiosResponse<T>): void {
@@ -291,6 +313,29 @@ export function makeAxiosPlus(configureOptions?: AxiosPlusOptionsConfig): MakeAx
 		return tryGetFromCache(config, options, dispatch) || executeRequest(config, dispatch);
 	}
 
+	async function load<T>(
+		_config: AxiosRequestConfig<T> | string,
+		_options?: AxiosPlusLoadOptions
+	): Promise<
+		[{ data: T | undefined; error: AxiosError<T> | null; response?: AxiosResponse<T> | undefined }]
+	> {
+		const config = configToObject(_config);
+		const options = { ...defaultLoadOptions, ..._options };
+		const cachedResponse = tryGetFromCache(config, options);
+		if (options.useCache && cachedResponse) {
+			return [{ data: cachedResponse.data, error: null, response: cachedResponse }];
+		}
+		try {
+			const response = await axiosInstance(config);
+			if (options.useCache) {
+				tryStoreInCache(config, response);
+			}
+			return [{ data: response.data, error: null, response: response }];
+		} catch (err) {
+			return [{ data: undefined, error: err as AxiosError<T> }];
+		}
+	}
+
 	function svelteAxiosPlus<T>(
 		_config: AxiosRequestConfig<T> | string,
 		_options?: AxiosPlusOptions
@@ -309,11 +354,12 @@ export function makeAxiosPlus(configureOptions?: AxiosPlusOptionsConfig): MakeAx
 	] {
 		const config = configToObject(_config);
 		const options = { ...defaultOptions, ..._options };
+		let abortController: AbortController;
+
 		const [state, dispatch] = useReducer<AxiosPlusState<any>, AxiosPlusAction<any>>(
 			reducer,
 			createInitialState(config, options)
 		);
-		let abortController: AbortController;
 
 		const cancelOutstandingRequest = (): void => {
 			if (abortController) {
