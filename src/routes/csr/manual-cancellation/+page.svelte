@@ -21,6 +21,9 @@
 	};
 </script>
 
+<h1>CSR manual cancellation example</h1>
+<a href="/">Back to TOC</a>
+
 <div>
 	<button on:click={() => handleFetch()}>Refetch</button>
 	<button on:click={() => externalRefetch()}>External Refetch</button>

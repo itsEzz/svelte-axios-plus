@@ -6,6 +6,9 @@
 	);
 </script>
 
+<h1>CSR quickstart example</h1>
+<a href="/">Back to TOC</a>
+
 {#if $loading}
 	<p>Loading...</p>
 {:else if $error}

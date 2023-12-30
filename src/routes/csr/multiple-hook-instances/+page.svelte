@@ -9,6 +9,9 @@
 	const [{ data, loading, error }, refetch] = axiosPlus('/users?delay=1');
 </script>
 
+<h1>CSR multiple hook instances example</h1>
+<a href="/">Back to TOC</a>
+
 {#if $loading}
 	<p>Loading...</p>
 {/if}

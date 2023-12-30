@@ -12,4 +12,7 @@
 	configure({ axios, cache });
 </script>
 
+<h1>CSR configuration example</h1>
+<a href="/">Back to TOC</a>
+
 <p>This example does not offer any output. Please checkout the code itself.</p>
