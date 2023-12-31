@@ -23,7 +23,7 @@
 	}
 </script>
 
-<h1>CSR manual requests example</h1>
+<h1>Manual requests example</h1>
 <a href="/">Back to TOC</a>
 
 {#if $getLoading || $putLoading}

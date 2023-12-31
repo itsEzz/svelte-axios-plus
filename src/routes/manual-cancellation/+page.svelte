@@ -21,7 +21,7 @@
 	};
 </script>
 
-<h1>CSR manual cancellation example</h1>
+<h1>Manual cancellation example</h1>
 <a href="/">Back to TOC</a>
 
 <div>

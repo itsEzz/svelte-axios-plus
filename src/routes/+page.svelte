@@ -5,26 +5,22 @@
 </p>
 <p>Checkout the svelte-axios-plus examples shown in the README in action:</p>
 
-<h1>CSR examples</h1>
 <ul>
 	<li>
-		<a href="/csr/quickstart">Quickstart</a>
+		<a href="/quickstart">Quickstart</a>
 	</li>
 	<li>
-		<a href="/csr/configuration">Configuration</a>
+		<a href="/configuration">Configuration</a>
 	</li>
 	<li>
-		<a href="/csr/manual-requests">Manual Requests</a>
+		<a href="/manual-requests">Manual Requests</a>
 	</li>
 	<li>
-		<a href="/csr/manual-cancellation">Manual Cancellation</a>
+		<a href="/manual-cancellation">Manual Cancellation</a>
 	</li>
 	<li>
-		<a href="/csr/multiple-hook-instances">Multiple Hook Instances</a>
+		<a href="/multiple-hook-instances">Multiple Hook Instances</a>
 	</li>
-</ul>
-<h1>SSR examples</h1>
-<ul>
-	<li><a href="/ssr/page">+page load function</a></li>
-	<li><a href="/ssr/page-server">+page.server load function</a></li>
+	<li><a href="/page">+page load function</a></li>
+	<li><a href="/page-server">+page.server load function</a></li>
 </ul>

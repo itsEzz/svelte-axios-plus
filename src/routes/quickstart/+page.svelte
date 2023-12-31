@@ -6,7 +6,7 @@
 	);
 </script>
 
-<h1>CSR quickstart example</h1>
+<h1>Quickstart example</h1>
 <a href="/">Back to TOC</a>
 
 {#if $loading}
