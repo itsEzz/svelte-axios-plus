@@ -44,23 +44,17 @@ Axios with some additional features to make working with request even more simpl
 - [resetConfigure](#resetconfigure)
 - [configure](#configure-axios-cache-defaultoptions-)
 - [clearCache](#clearcache)
-- [load](#load-usecache)
+- [load](#load-usecache-)
 - [makeAxiosPlus](#makeaxiosplus-axios-cache-defaultoptions-)
 
 ### Guides
 
-#### Usage in .svelte files
 <!-- no toc -->
 - [Configuration](#configuration)
 - [Manual Requests](#manual-requests)
 - [Manual Cancellation](#manual-cancellation)
 - [Server Side Rendering](#server-side-rendering)
 - [Multiple Hook Instances](#multiple-hook-instances)
-
-#### Usage in page load functions
-<!-- no toc -->
-- [page load]()
-- [page.server load]()
 
 ## API
 
@@ -366,7 +360,7 @@ In Svelte you can load data for your page via the `+page.server.ts` file. The lo
 	<pre>Data: {JSON.stringify(data.rdata, null, 2)}</pre>
 	<p>Error: {data.error}</p>
    ```
-   > **_NOTE_**: You should use a proper type for the `data` prop and not just `any`. In this case the proper type would the the `PageServerLoad` interface defined in the `+page.server.ts` file.
+   > **_NOTE_**: You should use a proper type for the `data` prop and not just `any`. In this case the proper type would be the `PageServerLoad` interface defined in the `+page.server.ts` file.
 4. That's it :)
    
 [Ref](https://github.com/itsEzz/svelte-axios-plus/tree/master/src/routes/page-server)
