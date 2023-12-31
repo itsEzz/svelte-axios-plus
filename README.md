@@ -13,11 +13,7 @@ Axios with some additional features to make working with request even more simpl
 
 > `axios` is a peer dependency and needs to be installed explicitly
 
-## Version information
-
-- `svelte-axios-plus` is compatible with `axios@1.x`
-
-## Quick Start
+## Quickstart
 
 ```svelte
 <script lang="ts">
@@ -37,18 +33,23 @@ Axios with some additional features to make working with request even more simpl
 	<button on:click={() => refetch()}>Refetch</button>
 	<pre>{JSON.stringify($data, null, 2)}</pre>
 </div>
-
 ```
+[Ref](https://github.com/itsEzz/svelte-axios-plus/tree/master/src/routes/quickstart)
 
 ## Documentation
 
 ### API
 <!-- no toc -->
 - [axiosPlus](#axiosplusurlconfig-options)
+- [resetConfigure](#resetconfigure)
 - [configure](#configure-axios-cache-defaultoptions-)
+- [clearCache](#clearcache)
+- [load](#load-usecache)
 - [makeAxiosPlus](#makeaxiosplus-axios-cache-defaultoptions-)
 
 ### Guides
+
+#### Usage in .svelte files
 <!-- no toc -->
 - [Configuration](#configuration)
 - [Manual Requests](#manual-requests)
@@ -56,14 +57,22 @@ Axios with some additional features to make working with request even more simpl
 - [Server Side Rendering](#server-side-rendering)
 - [Multiple Hook Instances](#multiple-hook-instances)
 
+#### Usage in page load functions
+<!-- no toc -->
+- [page load]()
+- [page.server load]()
+
 ## API
 
 The package exports one default export and named exports:
 
 ```svelte
 import axiosPlus, {
-  configure,
-  makeUseAxios
+	resetConfigure,
+  	configure,
+	clearCache,
+	load,
+  	makeUseAxios
 } from 'svelte-axios-plus';
 ```
 
@@ -102,6 +111,10 @@ The main function to execute HTTP requests.
 
 - `manualCancel()` - A function to cancel outstanding requests manually.
 
+### resetConfigure()
+
+Resets the `axiosPlus` config to its default.
+
 ### configure({ axios, cache, defaultOptions })
 
 Allows to provide custom instances of cache and axios and to override the default options.
@@ -109,6 +122,27 @@ Allows to provide custom instances of cache and axios and to override the defaul
 - `axios` An instance of [axios](https://github.com/axios/axios#creating-an-instance).
 - `cache` An instance of [lru-cache](https://github.com/isaacs/node-lru-cache), or `false` to disable the cache.
 - `defaultOptions` An object overriding the default options. It will be merged with the default options.
+
+### clearCache()
+
+Clears the current cache.
+
+### load({ useCache })
+
+Allows the execution of `axiosPlus` in +page and +page.server load functions.
+
+- `useCache` ( `true` ) - Allows caching to be enabled/disabled for `axiosPlus`.
+
+**Returns**
+
+A promise with the following props.
+
+`[{ data, error, response }]`
+
+- `data` - The data property of the [success response](https://github.com/axios/axios#response-schema).
+- `error` - The [error](https://github.com/axios/axios#handling-errors) value.
+- `response` - The whole [success response](https://github.com/axios/axios#response-schema) object.
+
 
 ### makeAxiosPlus({ axios, cache, defaultOptions })
 
@@ -126,6 +160,8 @@ The returned value, besides being a function that can be used execute requests, 
 
 - `resetConfigure`
 - `configure`
+- `clearCache`
+- `load`
 
 which are the same as the package's named exports but limited to the `axiosPlus` instance returned by `makeAxiosPlus`.
 
@@ -145,6 +181,7 @@ Normally `axiosPlus` doesn't react to argument changes. However it is possible t
 	});
 </script>
 ```
+[Ref](https://github.com/itsEzz/svelte-axios-plus/tree/master/src/routes/manual-cancellation)
 
 If you use [reactive statements](https://svelte.dev/docs/svelte-components#script-3-$-marks-a-statement-as-reactive), `axiosPlus` will compare your arguments to detect any changes.
 When a change is detected, if the configuration allows a request to be fired (e.g. `manual:false`), any pending request is canceled and a new request is triggered, to avoid automatic cancellation you should use the `autoCancel:false` option.
@@ -154,13 +191,13 @@ When a change is detected, if the configuration allows a request to be fired (e.
 Unless provided via the `configure` function, `svelte-axios-plus` uses the following defaults:
 
 - `axios` - the default `axios` package export.
-- `cache` - a new instance of the default `lru-cache` package export, with no arguments.
+- `cache` - a new instance of the default `lru-cache` package export, with the following args `{ max: 500, ttl: 1000 * 60 }`.
 - `defaultOptions` - `{ manual: false, useCache: true, autoCancel: true }`
 
 These defaults may not suit your needs, for example:
 
 - you may want a common base url for axios requests
-- the default (Infinite) cache size may not be a suitable default
+- the default cache size and ttl may not be a suitable default
 - you want to disable caching altogether
 
 In such cases you can use the `configure` function to provide your custom implementation of both.
@@ -182,10 +219,11 @@ In such cases you can use the `configure` function to provide your custom implem
 	configure({ axios, cache });
 </script>
 ```
+[Ref](https://github.com/itsEzz/svelte-axios-plus/tree/master/src/routes/configuration)
 
 ## Manual Requests
 
-On the client, requests are executed when the component renders using the Svelte port of the  `useEffect` react hook.
+On the client, requests are executed when the component renders using a Svelte port of the  `useEffect` react hook.
 
 This may be undesirable, as in the case of non-GET requests. By using the `manual` option you can skip the automatic execution of requests and use the return value of `axiosPlus` to execute them manually, optionally providing configuration overrides to `axios`.
 
@@ -230,8 +268,8 @@ In the example below we use `axiosPlus` twice. Once to load the data when the co
 	<button on:click={() => updateData()}>Update data</button>
 	<pre>{JSON.stringify($putData || $getData, null, 2)}</pre>
 </div>
-
 ```
+[Ref](https://github.com/itsEzz/svelte-axios-plus/tree/master/src/routes/manual-requests)
 
 ## Manual Cancellation
 
@@ -277,10 +315,61 @@ We can call the cancellation programmatically or via controls.
 	<pre>{JSON.stringify($data, null, 2)}</pre>
 </div>
 ```
+[Ref](https://github.com/itsEzz/svelte-axios-plus/tree/master/src/routes/manual-cancellation)
 
 ## Server Side Rendering
 
-Server Side Rendering is currently not implemented. This feature will get added in future releases.
+Sometimes it's necessary to execute requests directly on the server because the requests contain api keys and/or other private information.   
+Currently it's not possible to use the `axiosPlus` function for these use cases.   
+However the library offers the async `load` function for these scenarios.
+
+### How it works
+In Svelte you can load data for your page via the `+page.server.ts` file. The logic inside that file is only executed on the server. You can read more about that topic over [here](https://kit.svelte.dev/docs/routing#page).  
+
+1. Create a `+page.server.ts` file for your route
+2. Paste the following code in the file
+	1. Import `axiosPlus`
+		```svelte
+		import axiosPlus from 'svelte-axios-plus';
+		```
+	2. Define the response type of your svelte load function
+		```svelte
+		interface PageServerLoad {
+			(): Promise<{
+				rdata: any;
+				error: string;
+			}>;
+		}
+		```
+	3. Add the code for the svelte load function 
+		```svelte
+		export const load: PageServerLoad = async () => {
+			const [{ data, error, response }] = await axiosPlus.load('https://reqres.in/api/users?delay=1');
+			return {
+				rdata: data,
+				error: JSON.stringify(error, null, 2)
+			};
+		};
+		```
+		> **_NOTE_**: We now use the `axiosPlus.load` function to directly fetch our data. Keep in mind that you need to await the `axiosPlus.load` function because it's async.
+	4. Last but no least we explicitly disable csr and enable ssr
+		```svelte
+		export const ssr = true;
+		export const csr = false;
+		```
+3. We can now access the data of our svelte load function in our `+page.svelte` file like this
+   ```svelte
+	<script lang="ts">
+		export let data: any;
+	</script>
+
+	<pre>Data: {JSON.stringify(data.rdata, null, 2)}</pre>
+	<p>Error: {data.error}</p>
+   ```
+   > **_NOTE_**: You should use a proper type for the `data` prop and not just `any`. In this case the proper type would the the `PageServerLoad` interface defined in the `+page.server.ts` file.
+4. That's it :)
+   
+[Ref](https://github.com/itsEzz/svelte-axios-plus/tree/master/src/routes/page-server)
 
 ## Multiple Hook Instances
 
@@ -318,6 +407,7 @@ In other words, `makeAxiosPlus` is a factory of `axiosPlus`, which returns a fun
 	<pre>{JSON.stringify($data, null, 2)}</pre>
 </div>
 ```
+[Ref](https://github.com/itsEzz/svelte-axios-plus/tree/master/src/routes/multiple-hook-instances)
 
 ## Testing
 
@@ -331,10 +421,10 @@ If your environment doesn't support ES6 Promises, you can [polyfill](https://git
 ## Credits
 
 `svelte-axios-plus` is heavily inspired by [axios-hooks](https://github.com/simoneb/axios-hooks). 
-It's basically an almost complete port of the react `axios-hooks` package that works with svelte.
+It's basically an almost complete port of the react `axios-hooks` package for svelte.
 
 ## License
 
-ISC
+[ISC](https://github.com/itsEzz/svelte-axios-plus/tree/master/LICENSE.md)
 
 [axios](https://github.com/axios/axios)
