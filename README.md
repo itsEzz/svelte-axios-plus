@@ -1,8 +1,3 @@
-# WIP Notice
-
-> [!IMPORTANT]  
-> This library is still in development and has not yet been published to npm.
-
 # svelte-axios-plus
 
 Axios with some additional features to make working with request even more simple and better.   
