@@ -1,6 +1,6 @@
 {
 	"name": "svelte-axios-plus",
-	"version": "0.0.1",
+	"version": "1.0.0",
 	"description": "Axios with some additional features to make working with request even more simple and better.",
 	"homepage": "https://github.com/itsEzz/svelte-axios-plus",
 	"repository": {
