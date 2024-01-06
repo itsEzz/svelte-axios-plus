@@ -61,7 +61,7 @@ import axiosPlus, {
   	configure,
 	clearCache,
 	load,
-  	makeUseAxios
+  	makeAxiosPlus
 } from 'svelte-axios-plus';
 ```
 
