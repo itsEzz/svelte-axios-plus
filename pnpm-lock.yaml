@@ -10,7 +10,7 @@ dependencies:
     version: 1.6.2
   lru-cache:
     specifier: ^10.1.0
-    version: 10.2.1
+    version: 10.2.2
 
 devDependencies:
   '@sveltejs/adapter-auto':
@@ -1458,8 +1458,8 @@ packages:
       tslib: 2.6.2
     dev: true
 
-  /lru-cache@10.2.1:
-    resolution: {integrity: sha512-tS24spDe/zXhWbNPErCHs/AGOzbKGHT+ybSBqmdLm8WZ1xXLWvH8Qn71QPAlqVhd0qUTWjy+Kl9JmISgDdEjsA==}
+  /lru-cache@10.2.2:
+    resolution: {integrity: sha512-9hp3Vp2/hFQUiIwKo8XCeFVnrg8Pk3TYNPIR7tJADKi5YfcF7vEaK7avFHTlSy3kOKYaJQaalfEo6YuXdceBOQ==}
     engines: {node: 14 || >=16.14}
     dev: false
 
