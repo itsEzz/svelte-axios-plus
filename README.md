@@ -57,7 +57,7 @@ Axios with some additional features to make working with request even more simpl
 - [configure](#configure-axios-cache-defaultoptions-defaultloadoptions-)
 - [clearCache](#clearcache)
 - [load](#loadurlconfig-options) 
-- [makeAxiosPlus](#makeaxiosplus-axios-cache-defaultoptions-)
+- [makeAxiosPlus](#makeaxiosplus-axios-cache-defaultoptions-defaultloadoptions-)
 
 ### Guides
 
