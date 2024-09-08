@@ -57,7 +57,7 @@ Axios with some additional features to make working with request even more simpl
 - [configure](#configure-axios-cache-defaultoptions-defaultloadoptions-)
 - [clearCache](#clearcache)
 - [load](#loadurlconfig-options) 
-- [makeAxiosPlus](#makeaxiosplus-axios-cache-defaultoptions-) 
+- [makeAxiosPlus](#makeaxiosplus-axios-cache-defaultoptions-)
 
 ### Guides
 
@@ -152,7 +152,6 @@ A promise with the following props.
 - `data` - The data property of the [success response](https://github.com/axios/axios#response-schema).
 - `error` - The [error](https://github.com/axios/axios#handling-errors) value.
 - `response` - The whole [success response](https://github.com/axios/axios#response-schema) object.
-
 
 ### makeAxiosPlus({ axios, cache, defaultOptions, defaultLoadOptions })
 
