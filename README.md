@@ -1,12 +1,29 @@
 # svelte-axios-plus
 
-Axios with some additional features to make working with request even more simple and better.   
+Axios with some additional features to make working with request even more simple and better.
 
 ## Installation
 
 `npm install axios svelte-axios-plus`
 
 > `axios` is a peer dependency and needs to be installed explicitly
+
+## Breaking changes
+
+<details>
+  <summary>Version 1.1.0</summary>
+  
+  ### load
+  The return type of the `load` function has changed.
+
+  ```svelte
+  // Before version 1.1.0
+  const [{ data, error, response }] = await axiosPlus.load('https://reqres.in/api/users?delay=1');
+  // New in version 1.1.0
+  const { data, error, response } = await axiosPlus.load('https://reqres.in/api/users?delay=1');
+  ```
+
+</details>
 
 ## Quickstart
 
@@ -37,10 +54,10 @@ Axios with some additional features to make working with request even more simpl
 <!-- no toc -->
 - [axiosPlus](#axiosplusurlconfig-options)
 - [resetConfigure](#resetconfigure)
-- [configure](#configure-axios-cache-defaultoptions-)
+- [configure](#configure-axios-cache-defaultoptions-defaultloadoptions-)
 - [clearCache](#clearcache)
-- [load](#load-usecache-)
-- [makeAxiosPlus](#makeaxiosplus-axios-cache-defaultoptions-)
+- [load](#loadurlconfig-options) 
+- [makeAxiosPlus](#makeaxiosplus-axios-cache-defaultoptions-) 
 
 ### Guides
 
@@ -81,14 +98,14 @@ The main function to execute HTTP requests.
 
 **Returns**
 
-`[{ data, loading, error, response }, execute, manualCancel]`
+`[{ data, loading, error, response }, execute, manualCancel, reset]`
 
 - `data` - The data property of the [success response](https://github.com/axios/axios#response-schema).
 - `loading` - True if the request is in progress, otherwise False.
 - `error` - The [error](https://github.com/axios/axios#handling-errors) value.
 - `response` - The whole [success response](https://github.com/axios/axios#response-schema) object.
 
-- `execute([config[, options]])` - A function to execute the request manually, bypassing the cache by default.
+- `execute(config, options)` - A function to execute the request manually, bypassing the cache by default.
 
   - `config` - Same `config` object as `axios`, which is _shallow-merged_ with the config object provided when invoking `axiosPlus`. Useful to provide arguments to non-GET requests.
   - `options` - An options object.
@@ -99,47 +116,52 @@ The main function to execute HTTP requests.
   A promise containing the response. If the request is unsuccessful, the promise rejects and the rejection must be handled manually.
 
 - `manualCancel()` - A function to cancel outstanding requests manually.
+- `reset()` - A function to reset the `data`, `loading` and `error` state to its default values.
 
 ### resetConfigure()
 
 Resets the `axiosPlus` config to its default.
 
-### configure({ axios, cache, defaultOptions })
+### configure({ axios, cache, defaultOptions, defaultLoadOptions })
 
 Allows to provide custom instances of cache and axios and to override the default options.
 
 - `axios` An instance of [axios](https://github.com/axios/axios#creating-an-instance).
 - `cache` An instance of [lru-cache](https://github.com/isaacs/node-lru-cache), or `false` to disable the cache.
 - `defaultOptions` An object overriding the default options. It will be merged with the default options.
+- `defaultLoadOptions` An object to override the default load options.
 
 ### clearCache()
 
 Clears the current cache.
 
-### load({ useCache })
+### load(url|config, options)
 
 Allows the execution of `axiosPlus` in +page and +page.server load functions.
 
-- `useCache` ( `true` ) - Allows caching to be enabled/disabled for `axiosPlus`.
+- `url|config` - Either a plain url as string or an axios [request config](https://github.com/axios/axios#request-config) object, like you normally would if you use `axios` directly.
+- `options` - An options object.
+  - `useCache` ( `true` ) - Allows caching to be enabled/disabled for `axiosPlus`.
 
 **Returns**
 
 A promise with the following props.
 
-`[{ data, error, response }]`
+`{ data, error, response }`
 
 - `data` - The data property of the [success response](https://github.com/axios/axios#response-schema).
 - `error` - The [error](https://github.com/axios/axios#handling-errors) value.
 - `response` - The whole [success response](https://github.com/axios/axios#response-schema) object.
 
 
-### makeAxiosPlus({ axios, cache, defaultOptions })
+### makeAxiosPlus({ axios, cache, defaultOptions, defaultLoadOptions })
 
 Creates an instance of `axiosPlus` configured with the axios instance, supplied cache and default options.
 
 - `axios` An instance of [axios](https://github.com/axios/axios#creating-an-instance).
 - `cache` An instance of [lru-cache](https://github.com/isaacs/node-lru-cache), or `false` to disable the cache.
 - `defaultOptions` An object overriding the default options. It will be merged with the default options.
+- `defaultLoadOptions` An object to override the default load options.
 
 **Returns**
 
@@ -175,6 +197,9 @@ Normally `axiosPlus` doesn't react to argument changes. However it is possible t
 If you use [reactive statements](https://svelte.dev/docs/svelte-components#script-3-$-marks-a-statement-as-reactive), `axiosPlus` will compare your arguments to detect any changes.
 When a change is detected, if the configuration allows a request to be fired (e.g. `manual:false`), any pending request is canceled and a new request is triggered, to avoid automatic cancellation you should use the `autoCancel:false` option.
 
+> [!IMPORTANT]  
+> The `data`, `error` and `response` state will get reset when a change is detected and a new request fired.
+
 ## Configuration
 
 Unless provided via the `configure` function, `svelte-axios-plus` uses the following defaults:
@@ -182,6 +207,7 @@ Unless provided via the `configure` function, `svelte-axios-plus` uses the follo
 - `axios` - the default `axios` package export.
 - `cache` - a new instance of the default `lru-cache` package export, with the following args `{ max: 500, ttl: 1000 * 60 }`.
 - `defaultOptions` - `{ manual: false, useCache: true, autoCancel: true }`
+- `defaultLoadOptions` - `{ useCache: true }`
 
 These defaults may not suit your needs, for example:
 
@@ -321,7 +347,7 @@ In Svelte you can load data for your page via the `+page.server.ts` file. The lo
 		```svelte
 		import axiosPlus from 'svelte-axios-plus';
 		```
-	2. Define the response type of your svelte load function
+	2. Define the response type of your svelte load function somewhere
 		```svelte
 		interface PageServerLoad {
 			(): Promise<{
@@ -333,7 +359,7 @@ In Svelte you can load data for your page via the `+page.server.ts` file. The lo
 	3. Add the code for the svelte load function 
 		```svelte
 		export const load: PageServerLoad = async () => {
-			const [{ data, error, response }] = await axiosPlus.load('https://reqres.in/api/users?delay=1');
+			const { data, error, response } = await axiosPlus.load('https://reqres.in/api/users?delay=1');
 			return {
 				rdata: data,
 				error: JSON.stringify(error, null, 2)
@@ -349,13 +375,12 @@ In Svelte you can load data for your page via the `+page.server.ts` file. The lo
 3. We can now access the data of our svelte load function in our `+page.svelte` file like this
    ```svelte
 	<script lang="ts">
-		export let data: any;
+		export let data: PageServerLoad;
 	</script>
 
 	<pre>Data: {JSON.stringify(data.rdata, null, 2)}</pre>
 	<p>Error: {data.error}</p>
    ```
-   > **_NOTE_**: You should use a proper type for the `data` prop and not just `any`. In this case the proper type would be the `PageServerLoad` interface defined in the `+page.server.ts` file.
 4. That's it :)
    
 [Ref](https://github.com/itsEzz/svelte-axios-plus/tree/master/src/routes/page-server)
@@ -364,7 +389,7 @@ In Svelte you can load data for your page via the `+page.server.ts` file. The lo
 
 Sometimes it is necessary to communicate with different APIs or use different caching strategies for different HTTP interactions.
 
-[`makeAxiosPlus`](#makeaxiosplus-axios-cache-defaultoptions) allows to create multiple instances of `axiosPlus` which can be configured and managed independently.
+[`makeAxiosPlus`](#makeaxiosplus-axios-cache-defaultoptions-defaultloadoptions-) allows to create multiple instances of `axiosPlus` which can be configured and managed independently. 
 
 In other words, `makeAxiosPlus` is a factory of `axiosPlus`, which returns a function configured against the provided `axios` or `cache` instances.
 

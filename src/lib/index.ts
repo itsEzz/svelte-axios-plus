@@ -1,5 +1,7 @@
 import StaticAxios, {
+	type AxiosPromise,
 	isCancel,
+	type AxiosStatic,
 	type AxiosError,
 	type AxiosInstance,
 	type AxiosRequestConfig,
@@ -16,78 +18,87 @@ import {
 } from 'svelte/store';
 import { afterUpdate, onDestroy } from 'svelte';
 
-interface AxiosPlusOptions {
+interface ResponseValues<TResponse = any, TBody = any, TError = any> {
+	loading: boolean;
+	data?: TResponse;
+	error: AxiosError<TError, TBody> | null;
+	response?: AxiosResponse<TResponse, TBody>;
+}
+
+export interface Options {
 	manual?: boolean;
 	useCache?: boolean;
 	autoCancel?: boolean;
 }
 
-interface AxiosPlusLoadOptions {
+export interface RefetchOptions {
 	useCache?: boolean;
 }
 
-interface AxiosPlusOptionsConfig extends AxiosPlusOptions {
-	axios?: AxiosInstance;
-	cache?: LRUCache<any, any>;
-	defaultOptions?: AxiosPlusOptions;
-	defaultLoadOptions?: AxiosPlusLoadOptions;
+export interface ConfigureOptions {
+	axios?: AxiosInstance | AxiosStatic | any;
+	cache?: LRUCache<any, any> | false;
+	defaultOptions?: Options;
+	defaultLoadOptions?: RefetchOptions;
 }
 
-interface AxiosPlusState<T> {
-	loading: boolean;
-	data?: T;
-	error: AxiosError<T> | null;
-	response?: AxiosResponse<T>;
+export interface RefetchFunction<TBody, TResponse> {
+	(
+		configOverride?: AxiosRequestConfig<TBody> | string,
+		options?: RefetchOptions
+	): AxiosPromise<TResponse>;
 }
 
-interface MakeAxiosPlus<T> {
-	(config: AxiosRequestConfig<T> | string, options?: AxiosPlusOptions): [
-		{
-			loading: Readable<boolean>;
-			data?: Readable<T>;
-			error: Readable<AxiosError<T> | null>;
-			response?: Readable<AxiosResponse<T> | undefined>;
-		},
-		(
-			configOverride?: AxiosRequestConfig<T>,
-			options?: AxiosPlusOptions
-		) => Promise<AxiosResponse<T>>,
-		() => void
-	];
+export type AxiosPlusResult<TResponse = any, TBody = any, TError = any> = [
+	{
+		loading: Readable<boolean>;
+		data: Readable<TResponse | undefined>;
+		error: Readable<AxiosError<TError, TBody> | null>;
+		response: Readable<AxiosResponse<TResponse, TBody> | undefined>;
+	},
+	RefetchFunction<TBody, TResponse>,
+	() => void,
+	() => void
+];
+
+export interface AxiosPlus {
+	<TResponse = any, TBody = any, TError = any>(
+		config: AxiosRequestConfig<TBody> | string,
+		options?: Options
+	): AxiosPlusResult<TResponse, TBody, TError>;
+	load<TResponse = any, TBody = any, TError = any>(
+		config: AxiosRequestConfig<TBody> | string,
+		options?: RefetchOptions
+	): Promise<Omit<ResponseValues<TResponse, TBody, TError>, 'loading'>>;
+	configure(options: ConfigureOptions): void;
 	resetConfigure(): void;
-	configure(options?: AxiosPlusOptionsConfig): void;
 	clearCache(): void;
-	load(
-		config: AxiosRequestConfig<T> | string,
-		options?: AxiosPlusLoadOptions
-	): Promise<
-		[{ data: T | undefined; error: AxiosError<T> | null; response?: AxiosResponse<T> | undefined }]
-	>;
 }
 
-interface AxiosPlusAction<T> {
+interface Action<TResponse = any, TBody = any, TError = any> {
 	type: string;
-	payload?: AxiosResponse<T> | AxiosError<T>;
+	payload?: AxiosResponse<TResponse, TBody> | AxiosError<TError, TBody>;
 	error?: boolean;
 }
 
-const DEFAULT_OPTIONS: AxiosPlusOptions = {
+const DEFAULT_OPTIONS: Options = {
 	manual: false,
 	useCache: true,
 	autoCancel: true
 };
 
-const DEFAULT_LOAD_OPTIONS: AxiosPlusOptions = {
+const DEFAULT_LOAD_OPTIONS: RefetchOptions = {
 	useCache: true
 };
 
-const actions = {
+const actions: Record<string, string> = {
 	REQUEST_START: 'REQUEST_START',
 	REQUEST_END: 'REQUEST_END',
-	REQUEST_CANCEL: 'REQUEST_END_CANCEL'
+	REQUEST_CANCEL: 'REQUEST_END_CANCEL',
+	RESET: 'RESET'
 };
 
-const axiosPlus: MakeAxiosPlus<any> = makeAxiosPlus();
+const axiosPlus: AxiosPlus = makeAxiosPlus();
 
 export default axiosPlus;
 
@@ -149,14 +160,14 @@ function isEvent(event: any) {
 	return event instanceof Event;
 }
 
-function createCacheKey<T>(config: AxiosRequestConfig<T>): string {
+function createCacheKey(config: AxiosRequestConfig): string {
 	const cleanedConfig = { ...config };
 	delete cleanedConfig.cancelToken;
 
 	return JSON.stringify(cleanedConfig);
 }
 
-function configToObject<T>(config: string | AxiosRequestConfig<T>): AxiosRequestConfig<T> {
+function configToObject(config: string | AxiosRequestConfig): AxiosRequestConfig {
 	if (typeof config === 'string') {
 		return {
 			url: config
@@ -166,11 +177,11 @@ function configToObject<T>(config: string | AxiosRequestConfig<T>): AxiosRequest
 	return Object.assign({}, config);
 }
 
-export function makeAxiosPlus(configureOptions?: AxiosPlusOptionsConfig): MakeAxiosPlus<any> {
+export function makeAxiosPlus(configureOptions?: ConfigureOptions): AxiosPlus {
 	let cache: LRUCache<any, any>;
 	let axiosInstance: AxiosInstance;
-	let defaultOptions: AxiosPlusOptions;
-	let defaultLoadOptions: AxiosPlusLoadOptions;
+	let defaultOptions: Options;
+	let defaultLoadOptions: RefetchOptions;
 
 	function resetConfigure(): void {
 		cache = new LRUCache({ max: 500, ttl: 1000 * 60 });
@@ -179,12 +190,12 @@ export function makeAxiosPlus(configureOptions?: AxiosPlusOptionsConfig): MakeAx
 		defaultLoadOptions = DEFAULT_LOAD_OPTIONS;
 	}
 
-	function configure(options: AxiosPlusOptionsConfig = {}): void {
+	function configure(options: ConfigureOptions = {}): void {
 		if (options.axios !== undefined) {
 			axiosInstance = options.axios;
 		}
 
-		if (options.cache !== undefined) {
+		if (options.cache !== undefined && typeof options.cache !== 'boolean') {
 			cache = options.cache;
 		}
 
@@ -211,7 +222,7 @@ export function makeAxiosPlus(configureOptions?: AxiosPlusOptionsConfig): MakeAx
 		load
 	});
 
-	function tryStoreInCache<T>(config: AxiosRequestConfig<T>, response: AxiosResponse<T>): void {
+	function tryStoreInCache(config: AxiosRequestConfig, response: AxiosResponse): void {
 		if (!cache) {
 			return;
 		}
@@ -223,21 +234,18 @@ export function makeAxiosPlus(configureOptions?: AxiosPlusOptionsConfig): MakeAx
 		cache.set(cacheKey, responseForCache);
 	}
 
-	function createInitialState<T>(
-		config: AxiosRequestConfig<T>,
-		options: AxiosPlusOptions
-	): AxiosPlusState<T> {
+	function createInitialState(config: AxiosRequestConfig, options: Options): ResponseValues {
 		const response =
-			!options.manual && (tryGetFromCache(config, options) as AxiosResponse<T> | undefined);
+			!options.manual && (tryGetFromCache(config, options) as AxiosResponse | undefined);
 
 		return {
 			loading: !options.manual && !response,
 			error: null,
-			...(response ? { data: response.data as T | undefined, response } : null)
+			...(response ? { data: response.data, response } : null)
 		};
 	}
 
-	function reducer<T>(state: AxiosPlusState<T>, action: AxiosPlusAction<T>): AxiosPlusState<T> {
+	function reducer(state: ResponseValues, action: Action): ResponseValues {
 		switch (action.type) {
 			case actions.REQUEST_START:
 				return {
@@ -249,7 +257,7 @@ export function makeAxiosPlus(configureOptions?: AxiosPlusOptionsConfig): MakeAx
 				return {
 					...state,
 					loading: false,
-					...(action.error ? {} : { data: (action.payload as AxiosResponse<T>).data, error: null }),
+					...(action.error ? {} : { data: (action.payload as AxiosResponse).data, error: null }),
 					[action.error ? 'error' : 'response']: action.payload
 				};
 			case actions.REQUEST_CANCEL:
@@ -257,16 +265,22 @@ export function makeAxiosPlus(configureOptions?: AxiosPlusOptionsConfig): MakeAx
 					...state,
 					loading: false
 				};
+			case actions.RESET:
+				return {
+					data: undefined,
+					loading: false,
+					error: null
+				};
 			default:
 				return state;
 		}
 	}
 
-	function tryGetFromCache<T>(
-		config: AxiosRequestConfig<T>,
-		options: AxiosPlusOptions,
-		dispatch?: (action: AxiosPlusAction<T>) => void
-	): AxiosResponse<T> | void {
+	function tryGetFromCache(
+		config: AxiosRequestConfig,
+		options: Options,
+		dispatch?: (action: Action) => void
+	): AxiosResponse | void {
 		if (!cache || !options.useCache) {
 			return;
 		}
@@ -281,10 +295,10 @@ export function makeAxiosPlus(configureOptions?: AxiosPlusOptionsConfig): MakeAx
 		return response;
 	}
 
-	async function executeRequest<T>(
-		config: AxiosRequestConfig<T>,
-		dispatch: (action: AxiosPlusAction<T>) => void
-	): Promise<AxiosResponse<T>> {
+	async function executeRequest(
+		config: AxiosRequestConfig,
+		dispatch: (action: Action) => void
+	): Promise<AxiosResponse> {
 		try {
 			dispatch({ type: actions.REQUEST_START });
 
@@ -297,7 +311,11 @@ export function makeAxiosPlus(configureOptions?: AxiosPlusOptionsConfig): MakeAx
 			return response;
 		} catch (err) {
 			if (!isCancel(err)) {
-				dispatch({ type: actions.REQUEST_END, payload: err as AxiosError<T>, error: true });
+				dispatch({
+					type: actions.REQUEST_END,
+					payload: err as AxiosError,
+					error: true
+				});
 			} else if (isCancel(err)) {
 				dispatch({ type: actions.REQUEST_CANCEL });
 			}
@@ -305,58 +323,48 @@ export function makeAxiosPlus(configureOptions?: AxiosPlusOptionsConfig): MakeAx
 		}
 	}
 
-	async function request<T>(
-		config: AxiosRequestConfig<T>,
-		options: AxiosPlusOptions,
-		dispatch: (action: AxiosPlusAction<T>) => void
-	): Promise<AxiosResponse<T>> {
+	async function request(
+		config: AxiosRequestConfig,
+		options: Options,
+		dispatch: (action: Action) => void
+	): Promise<AxiosResponse> {
 		return tryGetFromCache(config, options, dispatch) || executeRequest(config, dispatch);
 	}
 
-	async function load<T>(
-		_config: AxiosRequestConfig<T> | string,
-		_options?: AxiosPlusLoadOptions
-	): Promise<
-		[{ data: T | undefined; error: AxiosError<T> | null; response?: AxiosResponse<T> | undefined }]
-	> {
+	async function load<TResponse, TBody, TError>(
+		_config: AxiosRequestConfig<TBody> | string,
+		_options?: RefetchOptions
+	): Promise<{
+		data?: TResponse;
+		error: AxiosError<TError, TBody> | null;
+		response?: AxiosResponse<TResponse, TBody>;
+	}> {
 		const config = configToObject(_config);
 		const options = { ...defaultLoadOptions, ..._options };
 		const cachedResponse = tryGetFromCache(config, options);
 		if (options.useCache && cachedResponse) {
-			return [{ data: cachedResponse.data, error: null, response: cachedResponse }];
+			return { data: cachedResponse.data, error: null, response: cachedResponse };
 		}
 		try {
 			const response = await axiosInstance(config);
 			if (options.useCache) {
 				tryStoreInCache(config, response);
 			}
-			return [{ data: response.data, error: null, response: response }];
+			return { data: response.data, error: null, response: response };
 		} catch (err) {
-			return [{ data: undefined, error: err as AxiosError<T> }];
+			return { data: undefined, error: err as AxiosError<TError, TBody> };
 		}
 	}
 
-	function svelteAxiosPlus<T>(
-		_config: AxiosRequestConfig<T> | string,
-		_options?: AxiosPlusOptions
-	): [
-		{
-			loading: Readable<boolean>;
-			data?: Readable<T>;
-			error: Readable<AxiosError<T> | null>;
-			response?: Readable<AxiosResponse<T> | undefined>;
-		},
-		(
-			configOverride?: AxiosRequestConfig<T>,
-			options?: AxiosPlusOptions
-		) => Promise<AxiosResponse<T>>,
-		() => void
-	] {
+	function svelteAxiosPlus<TResponse, TBody, TError>(
+		_config: AxiosRequestConfig<TBody> | string,
+		_options?: Options
+	): AxiosPlusResult<TResponse, TBody, TError> {
 		const config = configToObject(_config);
 		const options = { ...defaultOptions, ..._options };
 		let abortController: AbortController;
 
-		const [state, dispatch] = useReducer<AxiosPlusState<any>, AxiosPlusAction<any>>(
+		const [state, dispatch] = useReducer<ResponseValues<TResponse, TBody, TError>, Action>(
 			reducer,
 			createInitialState(config, options)
 		);
@@ -367,7 +375,7 @@ export function makeAxiosPlus(configureOptions?: AxiosPlusOptionsConfig): MakeAx
 			}
 		};
 
-		const withAbortSignal = (config: AxiosRequestConfig<T>): AxiosRequestConfig<T> => {
+		const withAbortSignal = (config: AxiosRequestConfig<TBody>): AxiosRequestConfig<TBody> => {
 			if (options.autoCancel) {
 				cancelOutstandingRequest();
 			}
@@ -392,10 +400,10 @@ export function makeAxiosPlus(configureOptions?: AxiosPlusOptionsConfig): MakeAx
 		);
 
 		const refetch = (
-			configOverride?: AxiosRequestConfig<T>,
-			options?: AxiosPlusOptions
-		): Promise<AxiosResponse<T>> => {
-			configOverride = configToObject(configOverride as AxiosRequestConfig<T> | string);
+			configOverride?: AxiosRequestConfig<TBody> | string,
+			options?: RefetchOptions
+		): AxiosPromise<TResponse> => {
+			configOverride = configToObject(configOverride as AxiosRequestConfig<TBody> | string);
 			return request(
 				withAbortSignal({
 					...config,
@@ -406,6 +414,10 @@ export function makeAxiosPlus(configureOptions?: AxiosPlusOptionsConfig): MakeAx
 			);
 		};
 
+		const resetState = (): void => {
+			dispatch({ type: actions.RESET });
+		};
+
 		return [
 			{
 				loading: derived(state, ($data) => $data.loading),
@@ -414,7 +426,8 @@ export function makeAxiosPlus(configureOptions?: AxiosPlusOptionsConfig): MakeAx
 				response: derived(state, ($data) => $data.response)
 			},
 			refetch,
-			cancelOutstandingRequest
+			cancelOutstandingRequest,
+			resetState
 		];
 	}
 }
