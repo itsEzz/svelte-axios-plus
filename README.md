@@ -116,7 +116,7 @@ The main function to execute HTTP requests.
   A promise containing the response. If the request is unsuccessful, the promise rejects and the rejection must be handled manually.
 
 - `manualCancel()` - A function to cancel outstanding requests manually.
-- `reset()` - A function to reset the `data`, `loading` and `error` state to its default values.
+- `reset()` - A function to reset the `axiosPlus` state to its default values.
 
 ### resetConfigure()
 
