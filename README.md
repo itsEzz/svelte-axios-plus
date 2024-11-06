@@ -67,6 +67,7 @@ Axios with some additional features to make working with request even more simpl
 - [Manual Cancellation](#manual-cancellation)
 - [Server Side Rendering](#server-side-rendering)
 - [Multiple Hook Instances](#multiple-hook-instances)
+- [Playground](#playground)
 
 ## API
 
@@ -297,17 +298,16 @@ We can call the cancellation programmatically or via controls.
 
 ```svelte
 <script lang="ts">
-	import { writable, type Writable } from 'svelte/store';
 	import axiosPlus from 'svelte-axios-plus';
 
-	const pagination: Writable<Record<string, number>> = writable({});
+	let pagination: Record<string, number> = { per_page: 6, page: 1 };
 	$: [{ data, loading }, refetch, cancelRequest] = axiosPlus({
 		url: 'https://reqres.in/api/users?delay=5',
-		params: $pagination
+		params: pagination
 	});
 
 	const handleFetch = () => {
-		pagination.set({ per_page: 2, page: 2 });
+		pagination = { ...pagination, page: pagination.page + 1 };
 	};
 
 	const externalRefetch = async () => {
@@ -421,6 +421,19 @@ In other words, `makeAxiosPlus` is a factory of `axiosPlus`, which returns a fun
 </div>
 ```
 [Ref](https://github.com/itsEzz/svelte-axios-plus/tree/master/src/routes/multiple-hook-instances)
+
+### Playground
+
+The project includes a very simple playground example to play around with the library and its features.
+
+Follow these steps to play around with the playground:
+1. Clone the repository
+2. Install dependencies via `npm install`
+3. Start the project via `npm run dev`
+4. Open the displayed url in your browser (most likely http://localhost:5173)
+5. Click on the Playground link
+
+[Ref](https://github.com/itsEzz/svelte-axios-plus/tree/master/src/routes/playground)
 
 ## Testing
 
