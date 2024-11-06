@@ -14,7 +14,7 @@
 		"axios",
 		"svelte"
 	],
-	"license": "ISC",
+	"license": "MIT",
 	"author": {
 		"name": "Adrian Gast"
 	},

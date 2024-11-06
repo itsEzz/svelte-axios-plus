@@ -451,6 +451,6 @@ It's basically an almost complete port of the react `axios-hooks` package for sv
 
 ## License
 
-[ISC](https://github.com/itsEzz/svelte-axios-plus/tree/master/LICENSE.md)
+[MIT](https://github.com/itsEzz/svelte-axios-plus/tree/master/LICENSE.md)
 
 [axios](https://github.com/axios/axios)
