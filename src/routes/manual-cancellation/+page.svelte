@@ -1,15 +1,14 @@
 <script lang="ts">
-	import { writable, type Writable } from 'svelte/store';
 	import axiosPlus from '$lib/index.js';
 
-	const pagination: Writable<Record<string, number>> = writable({});
+	let pagination: Record<string, number> = { per_page: 6, page: 1 };
 	$: [{ data, loading }, refetch, cancelRequest] = axiosPlus({
 		url: 'https://reqres.in/api/users?delay=5',
-		params: $pagination
+		params: pagination
 	});
 
 	const handleFetch = () => {
-		pagination.set({ per_page: 2, page: 2 });
+		pagination = { ...pagination, page: pagination.page + 1 };
 	};
 
 	const externalRefetch = async () => {
