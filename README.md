@@ -426,7 +426,7 @@ In other words, `makeAxiosPlus` is a factory of `axiosPlus`, which returns a fun
 
 The project includes a very simple playground example to play around with the library and its features.
 
-Follow these steps to play around with the playground:
+Follow these steps to access the playground:
 1. Clone the repository
 2. Install dependencies via `npm install`
 3. Start the project via `npm run dev`
