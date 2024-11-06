@@ -1,22 +1,15 @@
 import StaticAxios, {
-	type AxiosPromise,
-	isCancel,
-	type AxiosStatic,
 	type AxiosError,
 	type AxiosInstance,
+	type AxiosPromise,
 	type AxiosRequestConfig,
-	type AxiosResponse
+	type AxiosResponse,
+	type AxiosStatic,
+	isCancel
 } from 'axios';
 import { LRUCache } from 'lru-cache';
-import {
-	type Readable,
-	derived,
-	type Subscriber,
-	type Invalidator,
-	type Unsubscriber,
-	writable
-} from 'svelte/store';
 import { afterUpdate, onDestroy } from 'svelte';
+import { derived, get, type Readable, writable } from 'svelte/store';
 
 interface ResponseValues<TResponse = any, TBody = any, TError = any> {
 	loading: boolean;
@@ -104,60 +97,42 @@ export default axiosPlus;
 
 export const { resetConfigure, configure, clearCache, load } = axiosPlus;
 
-function useEffect(callback: (() => CallableFunction) | (() => void), deps?: () => any[]) {
-	let cleanupCallback: CallableFunction | void;
+function useEffect(callback: () => void | (() => void), getDeps: () => any[]) {
+	let cleanup: (() => void) | void;
+	let previousDeps: any[] = [];
 
-	function rerun() {
-		if (cleanupCallback) {
-			cleanupCallback();
+	const update = () => {
+		const currentDeps = getDeps();
+		const depsChanged = currentDeps.some((dep, i) => dep !== previousDeps[i]);
+
+		if (depsChanged || previousDeps.length === 0) {
+			if (cleanup) cleanup();
+			cleanup = callback() || undefined;
+			previousDeps = currentDeps;
 		}
-		cleanupCallback = callback();
-	}
+	};
 
-	if (deps) {
-		let values: any[] | null = null;
-		afterUpdate(() => {
-			const new_values = deps();
-			if (values === null || new_values.some((value, i) => value !== values![i])) {
-				rerun();
-				values = new_values;
-			}
-		});
-	} else {
-		afterUpdate(rerun);
-	}
+	afterUpdate(update);
 
 	onDestroy(() => {
-		if (cleanupCallback) cleanupCallback();
+		if (cleanup) cleanup();
 	});
+
+	return update;
 }
 
-function useReducer<S, A>(
-	reducer: (state: S, action: A) => S,
-	initialArg: S,
-	initFunc?: (initialArg: S) => S
-): [
-	{
-		subscribe: (
-			this: void,
-			run: Subscriber<S>,
-			invalidate?: Invalidator<S> | undefined
-		) => Unsubscriber;
-	},
-	(action: A) => void
-] {
-	const initialState = initFunc instanceof Function ? initFunc(initialArg) : initialArg;
-	const { update, subscribe } = writable<S>(initialState);
+function createStore<S, A>(reducer: (state: S, action: A) => S, initialState: S) {
+	const store = writable(initialState);
 
-	function dispatch(action: A) {
-		update((state: S) => reducer(state, action));
-	}
+	const dispatch = (action: A) => {
+		store.update((state) => reducer(state, action));
+	};
 
-	return [{ subscribe }, dispatch];
+	return [store, dispatch] as const;
 }
 
-function isEvent(event: any) {
-	return event instanceof Event;
+function isEvent(obj: any) {
+	return obj instanceof Event;
 }
 
 function createCacheKey(config: AxiosRequestConfig): string {
@@ -364,7 +339,7 @@ export function makeAxiosPlus(configureOptions?: ConfigureOptions): AxiosPlus {
 		const options = { ...defaultOptions, ..._options };
 		let abortController: AbortController;
 
-		const [state, dispatch] = useReducer<ResponseValues<TResponse, TBody, TError>, Action>(
+		const [state, dispatch] = createStore<ResponseValues<TResponse, TBody, TError>, Action>(
 			reducer,
 			createInitialState(config, options)
 		);
@@ -415,6 +390,7 @@ export function makeAxiosPlus(configureOptions?: ConfigureOptions): AxiosPlus {
 		};
 
 		const resetState = (): void => {
+			if (get(state).loading) return;
 			dispatch({ type: actions.RESET });
 		};
 
