@@ -57,6 +57,7 @@ Axios with some additional features to make working with request even more simpl
 - [configure](#configure-axios-cache-defaultoptions-defaultloadoptions-)
 - [clearCache](#clearcache)
 - [load](#loadurlconfig-options) 
+- [getConfig](#getconfig)
 - [makeAxiosPlus](#makeaxiosplus-axios-cache-defaultoptions-defaultloadoptions-)
 
 ### Guides
@@ -153,6 +154,19 @@ A promise with the following props.
 - `data` - The data property of the [success response](https://github.com/axios/axios#response-schema).
 - `error` - The [error](https://github.com/axios/axios#handling-errors) value.
 - `response` - The whole [success response](https://github.com/axios/axios#response-schema) object.
+
+### getConfig()
+
+Returns the current `svelte-axios-plus` config.
+
+**Returns**
+
+`{ axios, cache, defaultOptions, defaultLoadOptions }`
+
+- `axios` The currently configured axios instance that is being used.
+- `cache` The currently configured LRU cache instance that is being used or `false` if the cache is disabled.
+- `defaultOptions` The currently configured default options.
+- `defaultLoadOptions` The currently configured default load options.
 
 ### makeAxiosPlus({ axios, cache, defaultOptions, defaultLoadOptions })
 
