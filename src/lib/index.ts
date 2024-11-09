@@ -66,6 +66,14 @@ export interface AxiosPlus {
 	configure(options: ConfigureOptions): void;
 	resetConfigure(): void;
 	clearCache(): void;
+	getConfig(): AxiosPlusConfig;
+}
+
+export interface AxiosPlusConfig {
+	readonly axios: AxiosInstance | AxiosStatic | any;
+	readonly cache: LRUCache<any, any> | false;
+	readonly defaultOptions: Options;
+	readonly defaultLoadOptions: RefetchOptions;
 }
 
 interface Action<TResponse = any, TBody = any, TError = any> {
@@ -95,7 +103,7 @@ const axiosPlus: AxiosPlus = makeAxiosPlus();
 
 export default axiosPlus;
 
-export const { resetConfigure, configure, clearCache, load } = axiosPlus;
+export const { resetConfigure, configure, clearCache, load, getConfig } = axiosPlus;
 
 function useEffect(callback: () => void | (() => void), getDeps: () => any[]) {
 	let cleanup: (() => void) | void;
@@ -153,7 +161,7 @@ function configToObject(config: string | AxiosRequestConfig): AxiosRequestConfig
 }
 
 export function makeAxiosPlus(configureOptions?: ConfigureOptions): AxiosPlus {
-	let cache: LRUCache<any, any>;
+	let cache: LRUCache<any, any> | false;
 	let axiosInstance: AxiosInstance;
 	let defaultOptions: Options;
 	let defaultLoadOptions: RefetchOptions;
@@ -170,7 +178,7 @@ export function makeAxiosPlus(configureOptions?: ConfigureOptions): AxiosPlus {
 			axiosInstance = options.axios;
 		}
 
-		if (options.cache !== undefined && typeof options.cache !== 'boolean') {
+		if (options.cache !== undefined) {
 			cache = options.cache;
 		}
 
@@ -187,14 +195,27 @@ export function makeAxiosPlus(configureOptions?: ConfigureOptions): AxiosPlus {
 	configure(configureOptions);
 
 	function clearCache(): void {
+		if (!cache) {
+			return;
+		}
 		cache.clear();
+	}
+
+	function getConfig(): AxiosPlusConfig {
+		return Object.freeze({
+			axios: axiosInstance,
+			cache: cache,
+			defaultOptions: Object.freeze({ ...defaultOptions }),
+			defaultLoadOptions: Object.freeze({ ...defaultLoadOptions })
+		});
 	}
 
 	return Object.assign(svelteAxiosPlus, {
 		resetConfigure,
 		configure,
 		clearCache,
-		load
+		load,
+		getConfig
 	});
 
 	function tryStoreInCache(config: AxiosRequestConfig, response: AxiosResponse): void {
