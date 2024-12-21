@@ -1,6 +1,5 @@
 import StaticAxios from 'axios';
 import { LRUCache } from 'lru-cache';
-import { get } from 'svelte/store';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import axiosPlus, {
 	clearCache,
@@ -9,7 +8,8 @@ import axiosPlus, {
 	load,
 	makeAxiosPlus,
 	resetConfigure
-} from '../src/lib/index.js';
+} from '../src/lib/index.svelte.js';
+import { flushSync } from 'svelte';
 
 const defaultConfig = {
 	axios: StaticAxios,
@@ -277,12 +277,6 @@ describe('load', () => {
 
 describe('axiosPlus', () => {
 	beforeEach(() => {
-		vi.mock('svelte', () => ({
-			afterUpdate: vi.fn(),
-			onDestroy: vi.fn(),
-			mount: vi.fn(),
-			tick: vi.fn()
-		}));
 		configure({
 			axios: vi.fn().mockResolvedValueOnce({ data: 'whatever' }),
 			cache: false
@@ -294,20 +288,28 @@ describe('axiosPlus', () => {
 	});
 
 	it('should not throw', () => {
-		expect(axiosPlus).not.toThrowError();
+		const cleanup = $effect.root(() => {
+			expect(axiosPlus).not.toThrowError();
+		});
+		cleanup();
 	});
 
 	it('should return expected data after init', () => {
-		const [{ loading, data, error, response }, refetch, cancel, reset] = axiosPlus('test', {
-			manual: true
-		});
+		const cleanup = $effect.root(() => {
+			const { req, refetch, cancel, reset } = axiosPlus('test', {
+				manual: true
+			});
 
-		expect(get(loading)).toBeTypeOf('boolean');
-		expect(get(data)).toBeUndefined();
-		expect(get(error)).toBeNull();
-		expect(get(response)).toBeUndefined();
-		expect(refetch).toBeInstanceOf(Function);
-		expect(cancel).toBeInstanceOf(Function);
-		expect(reset).toBeInstanceOf(Function);
+			flushSync();
+
+			expect(req.loading).toBeTypeOf('boolean');
+			expect(req.data).toBeUndefined();
+			expect(req.error).toBeNull();
+			expect(req.response).toBeUndefined();
+			expect(refetch).toBeInstanceOf(Function);
+			expect(cancel).toBeInstanceOf(Function);
+			expect(reset).toBeInstanceOf(Function);
+		});
+		cleanup();
 	});
 });
