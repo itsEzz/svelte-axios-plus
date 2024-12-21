@@ -1,17 +1,19 @@
 <script lang="ts">
-	import axiosPlus, { clearCache } from '$lib/index.js';
+	import axiosPlus, { clearCache } from '$lib/index.svelte.js';
 	import { isAxiosError, isCancel } from 'axios';
 
-	let manual: boolean = true;
-	let autoCancel: boolean = true;
-	let useCache: boolean = true;
+	let manual: boolean = $state(true);
+	let autoCancel: boolean = $state(true);
+	let useCache: boolean = $state(true);
+	let force: boolean = $state(false);
 
-	$: [{ loading, data, error, response }, refetch, cancel, reset] = axiosPlus(
-		'https://reqres.in/api/users?delay=1',
-		{ manual, autoCancel, useCache }
+	let { req, refetch, cancel, reset } = $derived(
+		axiosPlus('https://reqres.in/api/users?delay=1', {
+			manual,
+			autoCancel,
+			useCache
+		})
 	);
-
-	$: if ($response) console.log('Raw response', $response);
 
 	async function execRefetch() {
 		try {
@@ -35,14 +37,16 @@
 <label for="autoCancel"> Auto cancel request</label><br />
 <input type="checkbox" id="useCache" name="useCache" bind:checked={useCache} />
 <label for="useCache"> Use cache</label><br />
+<input type="checkbox" id="force" name="force" bind:checked={force} />
+<label for="useCache"> Force reset state</label><br />
 
-<button on:click={() => execRefetch()}>Execute request (refetch)</button>
-<button on:click={() => cancel()} disabled={!$loading}>Cancel request</button>
-<button on:click={() => reset()} disabled={$loading}>Reset state</button>
-<button on:click={() => clearCache()} disabled={$loading}>Clear cache</button>
+<button onclick={() => execRefetch()}>Execute request (refetch)</button>
+<button onclick={() => cancel()} disabled={!req.loading}>Cancel request</button>
+<button onclick={() => reset(force)}>Reset state</button>
+<button onclick={() => clearCache()} disabled={req.loading}>Clear cache</button>
 
-<p><u>Request loading</u>: {$loading}</p>
+<p><u>Request loading</u>: {req.loading}</p>
 <p><u>Error</u>:</p>
-<pre>{JSON.stringify($error, null, 2)}</pre>
+<pre>{JSON.stringify(req.error, null, 2)}</pre>
 <p><u>Data</u>:</p>
-<pre>{JSON.stringify($data, null, 2)}</pre>
+<pre>{JSON.stringify(req.data, null, 2)}</pre>

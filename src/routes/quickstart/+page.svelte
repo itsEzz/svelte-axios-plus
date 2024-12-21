@@ -1,20 +1,18 @@
 <script lang="ts">
-	import axiosPlus from '$lib/index.js';
+	import axiosPlus from '$lib/index.svelte.js';
 
-	const [{ loading, data, error }, refetch, cancel] = axiosPlus(
-		'https://reqres.in/api/users?delay=1'
-	);
+	const { req, refetch } = axiosPlus('https://reqres.in/api/users?delay=1');
 </script>
 
 <h1>Quickstart example</h1>
 <a href="/">Back to TOC</a>
 
-{#if $loading}
+{#if req.loading}
 	<p>Loading...</p>
-{:else if $error}
+{:else if req.error}
 	<p>Error!</p>
 {/if}
 <div>
-	<button on:click={() => refetch()}>Refetch</button>
-	<pre>{JSON.stringify($data, null, 2)}</pre>
+	<button onclick={() => refetch()}>Refetch</button>
+	<pre>{JSON.stringify(req.data, null, 2)}</pre>
 </div>

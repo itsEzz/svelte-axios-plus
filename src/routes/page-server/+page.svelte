@@ -1,5 +1,9 @@
 <script lang="ts">
-	export let data: any;
+	interface Props {
+		data: any;
+	}
+
+	let { data }: Props = $props();
 </script>
 
 <h1>Page.server example</h1>

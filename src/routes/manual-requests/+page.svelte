@@ -1,11 +1,9 @@
 <script lang="ts">
-	import axiosPlus from '$lib/index.js';
+	import axiosPlus from '$lib/index.svelte.js';
 
-	const [{ data: getData, loading: getLoading, error: getError }] = axiosPlus(
-		'https://reqres.in/api/users/1'
-	);
+	const { req: getReq } = axiosPlus('https://reqres.in/api/users/1');
 
-	const [{ data: putData, loading: putLoading, error: putError }, executePut] = axiosPlus(
+	const { req: putReq, refetch } = axiosPlus(
 		{
 			url: 'https://reqres.in/api/users/1',
 			method: 'PUT'
@@ -14,9 +12,9 @@
 	);
 
 	function updateData() {
-		executePut({
+		refetch({
 			data: {
-				...$getData,
+				...getReq.data,
 				updatedAt: new Date().toISOString()
 			}
 		});
@@ -26,14 +24,14 @@
 <h1>Manual requests example</h1>
 <a href="/">Back to TOC</a>
 
-{#if $getLoading || $putLoading}
+{#if getReq.loading || putReq.loading}
 	<p>Loading...</p>
 {/if}
-{#if $getError || $putError}
+{#if getReq.error || putReq.error}
 	<p>Error!</p>
 {/if}
 
 <div>
-	<button on:click={() => updateData()}>Update data</button>
-	<pre>{JSON.stringify($putData || $getData, null, 2)}</pre>
+	<button onclick={updateData}>Update data</button>
+	<pre>{JSON.stringify(putReq.data || getReq.data, null, 2)}</pre>
 </div>

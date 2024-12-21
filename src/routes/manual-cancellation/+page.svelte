@@ -1,11 +1,13 @@
 <script lang="ts">
-	import axiosPlus from '$lib/index.js';
+	import axiosPlus from '$lib/index.svelte.js';
 
-	let pagination: Record<string, number> = { per_page: 6, page: 1 };
-	$: [{ data, loading }, refetch, cancelRequest] = axiosPlus({
-		url: 'https://reqres.in/api/users?delay=5',
-		params: pagination
-	});
+	let pagination: Record<string, number> = $state({ per_page: 6, page: 1 });
+	const { req, refetch, cancel } = $derived(
+		axiosPlus({
+			url: 'https://reqres.in/api/users?delay=5',
+			params: pagination
+		})
+	);
 
 	const handleFetch = () => {
 		pagination = { ...pagination, page: pagination.page + 1 };
@@ -24,11 +26,11 @@
 <a href="/">Back to TOC</a>
 
 <div>
-	<button on:click={() => handleFetch()}>Refetch</button>
-	<button on:click={() => externalRefetch()}>External Refetch</button>
-	<button disabled={!$loading} on:click={() => cancelRequest()}>Cancel Request</button>
-	{#if $loading}
+	<button onclick={handleFetch}>Refetch</button>
+	<button onclick={externalRefetch}>External Refetch</button>
+	<button disabled={!req.loading} onclick={cancel}>Cancel Request</button>
+	{#if req.loading}
 		<p>...loading</p>
 	{/if}
-	<pre>{JSON.stringify($data, null, 2)}</pre>
+	<pre>{JSON.stringify(req.data, null, 2)}</pre>
 </div>

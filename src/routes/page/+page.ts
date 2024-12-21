@@ -1,4 +1,4 @@
-import axiosPlus from '$lib/index.js';
+import axiosPlus from '$lib/index.svelte.js';
 
 interface PageLoad {
 	(): Promise<{

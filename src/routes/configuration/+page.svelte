@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { configure } from '$lib/index.js';
+	import { configure } from '$lib/index.svelte.js';
 	import { LRUCache } from 'lru-cache';
 	import Axios from 'axios';
 
