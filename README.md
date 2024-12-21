@@ -8,20 +8,95 @@ Axios with some additional features to make working with request even more simpl
 
 > `axios` is a peer dependency and needs to be installed explicitly
 
+## Compatibility
+
+Version 2.x.x of `svelte-axios-plus` is built for Svelte 5.
+
+Users running Svelte 4 applications should continue using the latest 1.x.x version of `svelte-axios-plus`.
+
+Full documentation for v1 is available in the [v1 Readme](https://github.com/itsEzz/svelte-axios-plus/blob/v1/README.md).
+
 ## Breaking changes
 
 <details>
-  <summary>Version 1.1.0</summary>
-  
-  ### load
-  The return type of the `load` function has changed.
+  <summary>Version 2.0.0</summary> 
 
-  ```svelte
-  // Before version 1.1.0
-  const [{ data, error, response }] = await axiosPlus.load('https://reqres.in/api/users?delay=1');
-  // New in version 1.1.0
-  const { data, error, response } = await axiosPlus.load('https://reqres.in/api/users?delay=1');
-  ```
+  ### General
+  - Requires Svelte 5 
+  - The library now uses Svelte 5's runes system internally  
+  - State management switched from Svelte 4 stores to Svelte 5's state management
+  
+  ### Types & Interfaces
+  - Renamed the following interfaces
+    - `ResponseValues` -> `RequestState`
+    - `Options` -> `AxiosPlusOptions`
+  - Updated the `AxiosPlusResult` type
+    ```ts
+	// Old type 
+	type AxiosPlusResult<TResponse = any, TBody = any, TError = any> = [
+		{
+			loading: Readable<boolean>;
+			data: Readable<TResponse | undefined>;
+			error: Readable<AxiosError<TError, TBody> | null>;
+			response: Readable<AxiosResponse<TResponse, TBody> | undefined>;
+		},
+		RefetchFunction<TBody, TResponse>,
+		() => void,
+		() => void
+	];
+
+	// New type
+	type AxiosPlusResult<TResponse = any, TBody = any, TError = any> = {
+		req: Readonly<RequestState>;
+		refetch: RefetchFunction<TBody, TResponse>;
+		cancel: () => void;
+		reset: () => void;
+	};
+	```
+
+  ### Usage of `axiosPlus`
+  Due to the `AxiosPlusResult` type update the usage of `axiosPlus` has changed (see example below).  
+  Further request state is now returned through the `req` property, and direct destructuring is no longer supported to maintain reactive state.
+  - Version 1.x.x usage example
+	```svelte
+	<script lang="ts">
+		import axiosPlus from 'svelte-axios-plus';
+
+		const [{ loading, data, error }, refetch] = axiosPlus(
+			'https://reqres.in/api/users?delay=1'
+		);
+	</script>
+
+	{#if $loading}
+		<p>Loading...</p>
+	{:else if $error}
+		<p>Error!</p>
+	{/if}
+	<div>
+		<button on:click={refetch}>Refetch</button>
+		<pre>{JSON.stringify($data, null, 2)}</pre>
+	</div>
+	```
+  - Version 2.x.x usage example
+	```svelte
+	<script lang="ts">
+		import axiosPlus from 'svelte-axios-plus';
+
+		const {req, refetch} = axiosPlus(
+			'https://reqres.in/api/users?delay=1'
+		);
+	</script>
+
+	{#if req.loading}
+		<p>Loading...</p>
+	{:else if req.error}
+		<p>Error!</p>
+	{/if}
+	<div>
+		<button onclick={refetch}>Refetch</button>
+		<pre>{JSON.stringify(req.data, null, 2)}</pre>
+	</div>
+	```
 
 </details>
 
@@ -31,19 +106,17 @@ Axios with some additional features to make working with request even more simpl
 <script lang="ts">
 	import axiosPlus from 'svelte-axios-plus';
 
-	const [{ loading, data, error }, refetch, cancel] = axiosPlus(
-		'https://reqres.in/api/users?delay=1'
-	);
+	const { req, refetch } = axiosPlus('https://reqres.in/api/users?delay=1');
 </script>
 
-{#if $loading}
+{#if req.loading}
 	<p>Loading...</p>
-{:else if $error}
+{:else if req.error}
 	<p>Error!</p>
 {/if}
 <div>
-	<button on:click={() => refetch()}>Refetch</button>
-	<pre>{JSON.stringify($data, null, 2)}</pre>
+	<button onclick={refetch}>Refetch</button>
+	<pre>{JSON.stringify(req.data, null, 2)}</pre>
 </div>
 ```
 [Ref](https://github.com/itsEzz/svelte-axios-plus/tree/master/src/routes/quickstart)
@@ -68,6 +141,7 @@ Axios with some additional features to make working with request even more simpl
 - [Manual Cancellation](#manual-cancellation)
 - [Server Side Rendering](#server-side-rendering)
 - [Multiple Hook Instances](#multiple-hook-instances)
+- [Reactivity](#reactivity)
 - [Playground](#playground)
 
 ## API
@@ -80,6 +154,7 @@ import axiosPlus, {
   	configure,
 	clearCache,
 	load,
+	getConfig,
   	makeAxiosPlus
 } from 'svelte-axios-plus';
 ```
@@ -91,34 +166,35 @@ The main function to execute HTTP requests.
 - `url|config` - Either a plain url as string or an axios [request config](https://github.com/axios/axios#request-config) object, like you normally would if you use `axios` directly.
 - `options` - An options object.
   - `manual` ( `false` ) - If true, the request is not executed immediately. Useful for non-GET requests that should not be executed when the component renders. Use the `execute` function returned when invoking `axiosPlus` to execute the request manually.
-  - `useCache` ( `true` ) - Allows caching to be enabled/disabled for `axiosPlus`. It doesn't affect the `execute` function returned by `axiosPlus`.
+  - `useCache` ( `true` ) - Allows caching to be enabled/disabled for `axiosPlus`. It doesn't affect the `refetch` function returned by `axiosPlus`.
   - `autoCancel` ( `true` ) - Enables or disables automatic cancellation of pending requests whether it be
-    from the automatic `axiosPlus` request or from the `manual` execute method.
+    from the automatic `axiosPlus` request or from the manual `refetch` method.
 
 > [!IMPORTANT]  
 > Default caching behavior can interfere with test isolation. Read the [testing](#testing) section for more information.
 
 **Returns**
 
-`[{ data, loading, error, response }, execute, manualCancel, reset]`
+`[req, refetch, cancel, reset]`
 
-- `data` - The data property of the [success response](https://github.com/axios/axios#response-schema).
-- `loading` - True if the request is in progress, otherwise False.
-- `error` - The [error](https://github.com/axios/axios#handling-errors) value.
-- `response` - The whole [success response](https://github.com/axios/axios#response-schema) object.
+- `req.data` - The data property of the [success response](https://github.com/axios/axios#response-schema).
+- `req.loading` - True if the request is in progress, otherwise False.
+- `req.error` - The [error](https://github.com/axios/axios#handling-errors) value.
+- `req.response` - The whole [success response](https://github.com/axios/axios#response-schema) object.
 
-- `execute(config, options)` - A function to execute the request manually, bypassing the cache by default.
+- `refetch(config, options)` - A function to execute the request manually, bypassing the cache by default.
 
   - `config` - Same `config` object as `axios`, which is _shallow-merged_ with the config object provided when invoking `axiosPlus`. Useful to provide arguments to non-GET requests.
   - `options` - An options object.
-    - `useCache` ( `false` ) - Allows caching to be enabled/disabled for this `execute` function.
+    - `useCache` ( `false` ) - Allows caching to be enabled/disabled for this `refetch` function.
 
   **Returns**
 
   A promise containing the response. If the request is unsuccessful, the promise rejects and the rejection must be handled manually.
 
-- `manualCancel()` - A function to cancel outstanding requests manually.
-- `reset()` - A function to reset the `axiosPlus` state to its default values.
+- `cancel()` - A function to cancel outstanding requests manually.
+- `reset(force)` - A function to reset the `axiosPlus` state to its default values.  
+  - `force` ( `false` ) - If true the currently running request will be canceled before resetting the state. Otherwise the state will not be resetted if a request is currently running.
 
 ### resetConfigure()
 
@@ -187,32 +263,9 @@ The returned value, besides being a function that can be used execute requests, 
 - `configure`
 - `clearCache`
 - `load`
+- `getConfig`
 
 which are the same as the package's named exports but limited to the `axiosPlus` instance returned by `makeAxiosPlus`.
-
-## Refresh Behavior
-
-Normally `axiosPlus` doesn't react to argument changes. However it is possible to achieve this behavior using svelte [reactive statements](https://svelte.dev/docs/svelte-components#script-3-$-marks-a-statement-as-reactive), like shown in the following example.
-
-```svelte
-<script lang="ts">
-	import { writable, type Writable } from 'svelte/store';
-	import axiosPlus from 'svelte-axios-plus';
-
-	const pagination: Writable<Record<string, number>> = writable({});
-	$: [{ data, loading }, refetch, cancelRequest] = axiosPlus({
-		url: 'https://reqres.in/api/users?delay=5',
-		params: $pagination
-	});
-</script>
-```
-[Ref](https://github.com/itsEzz/svelte-axios-plus/tree/master/src/routes/manual-cancellation)
-
-If you use [reactive statements](https://svelte.dev/docs/svelte-components#script-3-$-marks-a-statement-as-reactive), `axiosPlus` will compare your arguments to detect any changes.
-When a change is detected, if the configuration allows a request to be fired (e.g. `manual:false`), any pending request is canceled and a new request is triggered, to avoid automatic cancellation you should use the `autoCancel:false` option.
-
-> [!IMPORTANT]  
-> The `data`, `error` and `response` state will get reset when a change is detected and a new request fired.
 
 ## Configuration
 
@@ -252,7 +305,7 @@ In such cases you can use the `configure` function to provide your custom implem
 
 ## Manual Requests
 
-On the client, requests are executed when the component renders using a Svelte port of the  `useEffect` react hook.
+On the client, requests are executed when the component renders using the Svelte `$effect` rune.
 
 This may be undesirable, as in the case of non-GET requests. By using the `manual` option you can skip the automatic execution of requests and use the return value of `axiosPlus` to execute them manually, optionally providing configuration overrides to `axios`.
 
@@ -264,11 +317,9 @@ In the example below we use `axiosPlus` twice. Once to load the data when the co
 <script lang="ts">
 	import axiosPlus from 'svelte-axios-plus';
 
-	const [{ data: getData, loading: getLoading, error: getError }] = axiosPlus(
-		'https://reqres.in/api/users/1'
-	);
+	const { req: getReq } = axiosPlus('https://reqres.in/api/users/1');
 
-	const [{ data: putData, loading: putLoading, error: putError }, executePut] = axiosPlus(
+	const { req: putReq, refetch } = axiosPlus(
 		{
 			url: 'https://reqres.in/api/users/1',
 			method: 'PUT'
@@ -277,25 +328,25 @@ In the example below we use `axiosPlus` twice. Once to load the data when the co
 	);
 
 	function updateData() {
-		executePut({
+		refetch({
 			data: {
-				...$getData,
+				...getReq.data,
 				updatedAt: new Date().toISOString()
 			}
 		});
 	}
 </script>
 
-{#if $getLoading || $putLoading}
+{#if getReq.loading || putReq.loading}
 	<p>Loading...</p>
 {/if}
-{#if $getError || $putError}
+{#if getReq.error || putReq.error}
 	<p>Error!</p>
 {/if}
 
 <div>
-	<button on:click={() => updateData()}>Update data</button>
-	<pre>{JSON.stringify($putData || $getData, null, 2)}</pre>
+	<button onclick={updateData}>Update data</button>
+	<pre>{JSON.stringify(putReq.data || getReq.data, null, 2)}</pre>
 </div>
 ```
 [Ref](https://github.com/itsEzz/svelte-axios-plus/tree/master/src/routes/manual-requests)
@@ -303,7 +354,7 @@ In the example below we use `axiosPlus` twice. Once to load the data when the co
 ## Manual Cancellation
 
 The cancellation method can be used to cancel an outstanding request whether it be
-from the automatic request or from the `manual` execute method.
+from the automatic request or from the manual `refetch` method.
 
 ### Example
 
@@ -314,11 +365,13 @@ We can call the cancellation programmatically or via controls.
 <script lang="ts">
 	import axiosPlus from 'svelte-axios-plus';
 
-	let pagination: Record<string, number> = { per_page: 6, page: 1 };
-	$: [{ data, loading }, refetch, cancelRequest] = axiosPlus({
-		url: 'https://reqres.in/api/users?delay=5',
-		params: pagination
-	});
+	let pagination: Record<string, number> = $state({ per_page: 6, page: 1 });
+	const { req, refetch, cancel } = $derived(
+		axiosPlus({
+			url: 'https://reqres.in/api/users?delay=5',
+			params: pagination
+		})
+	);
 
 	const handleFetch = () => {
 		pagination = { ...pagination, page: pagination.page + 1 };
@@ -334,20 +387,20 @@ We can call the cancellation programmatically or via controls.
 </script>
 
 <div>
-	<button on:click={() => handleFetch()}>Refetch</button>
-	<button on:click={() => externalRefetch()}>External Refetch</button>
-	<button disabled={!$loading} on:click={() => cancelRequest()}>Cancel Request</button>
-	{#if $loading}
+	<button onclick={handleFetch}>Refetch</button>
+	<button onclick={externalRefetch}>External Refetch</button>
+	<button disabled={!req.loading} onclick={cancel}>Cancel Request</button>
+	{#if req.loading}
 		<p>...loading</p>
 	{/if}
-	<pre>{JSON.stringify($data, null, 2)}</pre>
+	<pre>{JSON.stringify(req.data, null, 2)}</pre>
 </div>
 ```
 [Ref](https://github.com/itsEzz/svelte-axios-plus/tree/master/src/routes/manual-cancellation)
 
 ## Server Side Rendering
 
-Sometimes it's necessary to execute requests directly on the server because the requests contain api keys and/or other private information.   
+Sometimes it's necessary to execute requests directly on the server because the requests contain api keys or other private information.   
 Currently it's not possible to use the `axiosPlus` function for these use cases.   
 However the library offers the async `load` function for these scenarios.
 
@@ -394,7 +447,6 @@ In Svelte you can load data for your page via the `+page.server.ts` file. The lo
 	<pre>Data: {JSON.stringify(data.rdata, null, 2)}</pre>
 	<p>Error: {data.error}</p>
    ```
-4. That's it :)
    
 [Ref](https://github.com/itsEzz/svelte-axios-plus/tree/master/src/routes/page-server)
 
@@ -419,22 +471,85 @@ In other words, `makeAxiosPlus` is a factory of `axiosPlus`, which returns a fun
 		axios: axios.create({ baseURL: 'https://reqres.in/api' })
 	});
 
-	const [{ data, loading, error }, refetch] = axiosPlus('/users?delay=1');
+	const { req, refetch } = customAxiosPlus('/users?delay=1');
 </script>
 
-{#if $loading}
+{#if req.loading}
 	<p>Loading...</p>
 {/if}
-{#if $error}
+{#if req.error}
 	<p>Error!</p>
 {/if}
 
 <div>
-	<button on:click={() => refetch()}>Refetch</button>
-	<pre>{JSON.stringify($data, null, 2)}</pre>
+	<button onclick={() => refetch()}>Refetch</button>
+	<pre>{JSON.stringify(req.data, null, 2)}</pre>
 </div>
 ```
 [Ref](https://github.com/itsEzz/svelte-axios-plus/tree/master/src/routes/multiple-hook-instances)
+
+## Reactivity
+
+Normally `axiosPlus` doesn't react to argument changes. However it is possible to rerun the function if referenced state changes by using the `$derived` rune or an `$effect` rune that calls the `refetch` function.
+
+### `$derived` method
+
+Wrapping `axiosPlus` with the `$derived` rune will rerun the function every time referenced state changes. 
+
+- Pros
+  - Only requires the `axiosPlus` function to be wrapped with the `$derived` rune
+  - Best way if you don't need to keep the internal state of `axiosPlus` intact
+- Cons
+  - Only works if the state that can change is referenced inside the `$derived` rune
+  - Due to the whole `axiosPlus` function being rerun, the internal state of `axiosPlus` is lost and currently running requests are canceled even if the `autoCancel` option is set to `false`
+
+```svelte
+<script lang="ts">
+	import axiosPlus from 'svelte-axios-plus';
+
+	const pagination: Record<string, number> = $state({});
+	const { req } = $derived(axiosPlus({
+		url: 'https://reqres.in/api/users?delay=5',
+		params: pagination
+	}));
+</script>
+```
+[Ref](https://github.com/itsEzz/svelte-axios-plus/tree/master/src/routes/reactivity)
+
+### `$effect` method
+
+Using the `$effect` rune to call the `refetch` function when state changes.
+
+- Pros
+  - State that can change doesn't need to be provided on `axiosPlus` function initialization
+  - The internal state of `axiosPlus` is kept intact and currently running requests are only canceled if the `autoCancel` option is set to `true`
+- Cons
+  - Requires an additional `$effect` rune which results in more code
+  - Not the best solution if you can achieve the same result with the `$derived` method (depends on your requirements)
+
+```svelte
+<script lang="ts">
+	import axiosPlus from 'svelte-axios-plus';
+
+	const pagination: Record<string, number> = $state({});
+	const { req, refetch } = axiosPlus({
+		url: 'https://reqres.in/api/users?delay=5'
+	});
+
+	$effect(() => {
+		async function fetchData() {
+			try {
+				await refetch({params: pagination});
+			} catch (error) {
+				// Handle errors here
+			}	
+		}
+
+		fetchData();
+	})
+</script>
+```
+[Ref](https://github.com/itsEzz/svelte-axios-plus/tree/master/src/routes/reactivity)
 
 ### Playground
 
@@ -460,8 +575,8 @@ If your environment doesn't support ES6 Promises, you can [polyfill](https://git
 
 ## Credits
 
-`svelte-axios-plus` is heavily inspired by [axios-hooks](https://github.com/simoneb/axios-hooks). 
-It's basically an almost complete port of the react `axios-hooks` package for svelte.
+`svelte-axios-plus` is heavily inspired by [axios-hooks](https://github.com/simoneb/axios-hooks).  
+It began as a simple port of the `axios-hooks` package to svelte, but over the time I added some additional features that are not present in the `axios-hooks` package.
 
 ## License
 
