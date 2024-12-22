@@ -1,7 +1,7 @@
 {
 	"name": "svelte-axios-plus",
 	"version": "2.0.0",
-	"description": "Axios with some additional features to make working with request even more simple and better.",
+	"description": "A Svelte-optimized Axios wrapper that provides reactive request handling, built-in caching, and simplified state management for HTTP requests.",
 	"license": "MIT",
 	"author": "Adrian Gast",
 	"homepage": "https://github.com/itsEzz/svelte-axios-plus",
