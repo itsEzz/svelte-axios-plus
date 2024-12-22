@@ -61,7 +61,7 @@ export interface AxiosPlus {
 		config: AxiosRequestConfig<TBody> | string,
 		options?: RefetchOptions
 	): Promise<Omit<RequestState<TResponse, TBody, TError>, 'loading'>>;
-	configure(options: ConfigureOptions): void;
+	configure(options?: ConfigureOptions): void;
 	resetConfigure(): void;
 	clearCache(): void;
 	getConfig(): AxiosPlusConfig;
