@@ -16,6 +16,9 @@ interface RequestState<TResponse = any, TBody = any, TError = any> {
 	response?: AxiosResponse<TResponse, TBody>;
 }
 
+export interface LoadResult<TResponse = any, TBody = any, TError = any>
+	extends Omit<RequestState<TResponse, TBody, TError>, 'loading'> {}
+
 export interface AxiosPlusOptions {
 	manual?: boolean;
 	useCache?: boolean;
@@ -49,8 +52,8 @@ export type AxiosPlusResult<TResponse = any, TBody = any, TError = any> = {
 
 export interface AxiosPlus {
 	<TResponse = any, TBody = any, TError = any>(
-		config: AxiosRequestConfig<TBody> | string,
-		options?: AxiosPlusOptions
+		config: AxiosRequestConfig<TBody> | string | (() => AxiosRequestConfig<TBody> | string),
+		options?: AxiosPlusOptions | (() => AxiosPlusOptions)
 	): AxiosPlusResult<TResponse, TBody, TError>;
 	load<TResponse = any, TBody = any, TError = any>(
 		config: AxiosRequestConfig<TBody> | string,
@@ -98,7 +101,7 @@ export default axiosPlus;
 
 export const { resetConfigure, configure, clearCache, load, getConfig } = axiosPlus;
 
-function isEvent(obj: any) {
+function isEvent(obj: any): boolean {
 	return obj instanceof Event;
 }
 
@@ -109,22 +112,76 @@ function createCacheKey(config: AxiosRequestConfig): string {
 	return JSON.stringify(cleanedConfig);
 }
 
-function configToObject(config: string | AxiosRequestConfig): AxiosRequestConfig {
-	if (typeof config === 'string') {
+function configToObject(
+	config: string | AxiosRequestConfig | (() => AxiosRequestConfig | string)
+): AxiosRequestConfig {
+	const _config = typeof config === 'function' ? config() : config;
+	if (typeof _config === 'string') {
 		return {
-			url: config
+			url: _config
 		};
 	}
-
-	return Object.assign({}, config);
+	return Object.assign({}, _config);
 }
 
+function optionsToObject(
+	defaultOptions: AxiosPlusOptions,
+	options?: AxiosPlusOptions | (() => AxiosPlusOptions)
+): AxiosPlusOptions {
+	const _options = typeof options === 'function' ? options() : options;
+	return Object.assign({}, { ...defaultOptions, ..._options });
+}
+
+/**
+ * Creates a new axios-plus instance with optional initial configuration
+ *
+ * @param {ConfigureOptions} [configureOptions] - Initial configuration options
+ * @param {(AxiosInstance | AxiosStatic | any)} [configureOptions.axios] - Custom Axios instance or Axios-like client
+ * @param {(LRUCache<any, any> | false)} [configureOptions.cache] - LRU cache instance or false to disable caching
+ * @param {AxiosPlusOptions} [configureOptions.defaultOptions] - Default options for all requests
+ * @param {boolean} [configureOptions.defaultOptions.manual] - If true, requests won't fire automatically
+ * @param {boolean} [configureOptions.defaultOptions.useCache] - If true, enables response caching
+ * @param {boolean} [configureOptions.defaultOptions.autoCancel] - If true, cancels pending requests
+ * @param {RefetchOptions} [configureOptions.defaultLoadOptions] - Default options for load function
+ * @param {boolean} [configureOptions.defaultLoadOptions.useCache] - If true, enables caching for load calls
+ * @returns {AxiosPlus} Configured axios-plus instance with methods:
+ *   - configure: Update instance configuration
+ *   - resetConfigure: Reset to default configuration
+ *   - clearCache: Clear the response cache
+ *   - load: Make one-time requests
+ *   - getConfig: Get current configuration
+ *
+ * @example
+ * // Create with default config
+ * const instance = makeAxiosPlus()
+ *
+ * // Create with custom config
+ * const instance = makeAxiosPlus({
+ *   axios: customAxiosInstance,
+ *   cache: new LRUCache({ max: 100 })
+ * })
+ */
 export function makeAxiosPlus(configureOptions?: ConfigureOptions): AxiosPlus {
 	let cache: LRUCache<any, any> | false;
 	let axiosInstance: AxiosInstance;
 	let defaultOptions: AxiosPlusOptions;
 	let defaultLoadOptions: RefetchOptions;
 
+	/**
+	 * Resets all configuration options back to default values
+	 *
+	 * Default values:
+	 * - cache: new LRUCache({ max: 500, ttl: 1000 * 60 })
+	 * - axios: StaticAxios instance
+	 * - defaultOptions: { manual: false, useCache: true, autoCancel: true }
+	 * - defaultLoadOptions: { useCache: true }
+	 *
+	 * @returns {void}
+	 *
+	 * @example
+	 * // Reset to default configuration
+	 * resetConfigure()
+	 */
 	function resetConfigure(): void {
 		cache = new LRUCache({ max: 500, ttl: 1000 * 60 });
 		axiosInstance = StaticAxios;
@@ -132,6 +189,43 @@ export function makeAxiosPlus(configureOptions?: ConfigureOptions): AxiosPlus {
 		defaultLoadOptions = DEFAULT_LOAD_OPTIONS;
 	}
 
+	/**
+	 * Configures the axios-plus instance with custom options
+	 *
+	 * @param {ConfigureOptions} [options] - Configuration options object
+	 * @param {(AxiosInstance | AxiosStatic | any)} [options.axios] - Custom Axios instance or Axios-like client
+	 * @param {(LRUCache<any, any> | false)} [options.cache] - LRU cache instance or false to disable caching
+	 * @param {AxiosPlusOptions} [options.defaultOptions] - Default options for all requests
+	 * @param {boolean} [options.defaultOptions.manual] - If true, requests won't fire automatically
+	 * @param {boolean} [options.defaultOptions.useCache] - If true, enables response caching
+	 * @param {boolean} [options.defaultOptions.autoCancel] - If true, cancels pending requests
+	 * @param {RefetchOptions} [options.defaultLoadOptions] - Default options for load function
+	 * @param {boolean} [options.defaultLoadOptions.useCache] - If true, enables caching for load calls
+	 * @returns {void}
+	 *
+	 * @example
+	 * // Configure custom axios instance
+	 * configure({ axios: customAxiosInstance })
+	 *
+	 * // Disable caching
+	 * configure({ cache: false })
+	 *
+	 * // Set default options
+	 * configure({
+	 *   defaultOptions: {
+	 *     manual: true,
+	 *     useCache: false,
+	 *     autoCancel: true
+	 *   }
+	 * })
+	 *
+	 * // Set default load options
+	 * configure({
+	 *   defaultLoadOptions: {
+	 *     useCache: false
+	 *   }
+	 * })
+	 */
 	function configure(options: ConfigureOptions = {}): void {
 		if (options.axios !== undefined) {
 			axiosInstance = options.axios;
@@ -153,6 +247,15 @@ export function makeAxiosPlus(configureOptions?: ConfigureOptions): AxiosPlus {
 	resetConfigure();
 	configure(configureOptions);
 
+	/**
+	 * Clears the current LRU cache if caching is enabled
+	 *
+	 * @returns {void}
+	 *
+	 * @example
+	 * // Clear all cached responses
+	 * clearCache()
+	 */
 	function clearCache(): void {
 		if (!cache) {
 			return;
@@ -160,6 +263,20 @@ export function makeAxiosPlus(configureOptions?: ConfigureOptions): AxiosPlus {
 		cache.clear();
 	}
 
+	/**
+	 * Returns the current configured options
+	 *
+	 * @returns {AxiosPlusConfig} Frozen object containing:
+	 *   - axios: Current Axios instance
+	 *   - cache: Current LRU cache instance or false if disabled
+	 *   - defaultOptions: Default options configuration
+	 *   - defaultLoadOptions: Default load options configuration
+	 *
+	 * @example
+	 * // Get current config
+	 * const config = getConfig()
+	 * console.log(config.defaultOptions)
+	 */
 	function getConfig(): AxiosPlusConfig {
 		return Object.freeze({
 			axios: axiosInstance,
@@ -283,14 +400,35 @@ export function makeAxiosPlus(configureOptions?: ConfigureOptions): AxiosPlus {
 		return tryGetFromCache(config, options, state) || executeRequest(config, state);
 	}
 
+	/**
+	 * Performs a one-time request with optional caching
+	 *
+	 * @param {(AxiosRequestConfig<TBody> | string)} config - Request configuration or URL
+	 * @param {RefetchOptions} [options] - Configuration options object
+	 * @param {boolean} [options.useCache] - If true, enables response caching
+	 * @returns {Promise<LoadResult<TResponse, TBody, TError>>} Object containing:
+	 *   - data: Response data if request succeeded
+	 *   - error: Error object if request failed
+	 *   - response: Full axios response object if request succeeded
+	 *
+	 * @example
+	 * // Basic GET request
+	 * const result = await load('.../api/data')
+	 *
+	 * // GET request with caching disabled
+	 * const result = await load('/api/data', { useCache: false })
+	 *
+	 * // POST request with config
+	 * const result = await load({
+	 *   url: '.../api/data',
+	 *   method: 'POST',
+	 *   data: { id: 1 }
+	 * })
+	 */
 	async function load<TResponse, TBody, TError>(
 		_config: AxiosRequestConfig<TBody> | string,
 		_options?: RefetchOptions
-	): Promise<{
-		data?: TResponse;
-		error: AxiosError<TError, TBody> | null;
-		response?: AxiosResponse<TResponse, TBody>;
-	}> {
+	): Promise<LoadResult<TResponse, TBody, TError>> {
 		const config = configToObject(_config);
 		const options = { ...defaultLoadOptions, ..._options };
 		const cachedResponse = tryGetFromCache(config, options);
@@ -308,15 +446,47 @@ export function makeAxiosPlus(configureOptions?: ConfigureOptions): AxiosPlus {
 		}
 	}
 
+	/**
+	 * Creates a reactive request handler with state management
+	 *
+	 * @param {(AxiosRequestConfig<TBody> | string | (() => AxiosRequestConfig<TBody> | string))} _config - Request configuration
+	 * @param {(AxiosPlusOptions | (() => AxiosPlusOptions))} [_options] - Request options
+	 * @param {boolean} [_options.manual] - If true, requests won't fire automatically
+	 * @param {boolean} [_options.useCache] - If true, enables response caching
+	 * @param {boolean} [_options.autoCancel] - If true, cancels pending requests
+	 * @returns {AxiosPlusResult<TResponse, TBody, TError>} Object containing:
+	 *   - req: Current request state (loading, data, error, response)
+	 *   - refetch: Function to re-execute the request
+	 *   - cancel: Function to cancel current request
+	 *   - reset: Function to reset request state
+	 *
+	 * @example
+	 * // Basic GET request
+	 * const { req, refetch, cancel, reset } = svelteAxiosPlus('/api/data')
+	 *
+	 * // POST with manual trigger
+	 * const { req, refetch, cancel, reset } = svelteAxiosPlus({
+	 *   url: '/api/data',
+	 *   method: 'POST'
+	 * }, { manual: true })
+	 */
 	function svelteAxiosPlus<TResponse, TBody, TError>(
-		_config: AxiosRequestConfig<TBody> | string,
-		_options?: AxiosPlusOptions
+		_config: AxiosRequestConfig<TBody> | string | (() => AxiosRequestConfig<TBody> | string),
+		_options?: AxiosPlusOptions | (() => AxiosPlusOptions)
 	): AxiosPlusResult<TResponse, TBody, TError> {
-		const config = configToObject(_config);
-		const options = { ...defaultOptions, ..._options };
 		let abortController: AbortController;
 
-		let state = $state<RequestState<TResponse, TBody, TError>>(createInitialState(config, options));
+		function getConfig(): AxiosRequestConfig<TBody> {
+			return configToObject(_config);
+		}
+
+		function getOptions(): AxiosPlusOptions {
+			return optionsToObject(defaultOptions, _options);
+		}
+
+		let state = $state<RequestState<TResponse, TBody, TError>>(
+			createInitialState(getConfig(), getOptions())
+		);
 
 		function cancelOutstandingRequest(): void {
 			if (abortController) {
@@ -325,6 +495,7 @@ export function makeAxiosPlus(configureOptions?: ConfigureOptions): AxiosPlus {
 		}
 
 		function withAbortSignal(config: AxiosRequestConfig<TBody>): AxiosRequestConfig<TBody> {
+			const options = getOptions();
 			if (options.autoCancel) {
 				cancelOutstandingRequest();
 			}
@@ -334,8 +505,9 @@ export function makeAxiosPlus(configureOptions?: ConfigureOptions): AxiosPlus {
 		}
 
 		$effect(() => {
+			const options = getOptions();
 			if (!options.manual) {
-				request(withAbortSignal(config), options, state).catch(() => {});
+				request(withAbortSignal(getConfig()), options, state).catch(() => {});
 			}
 
 			return () => {
@@ -346,16 +518,16 @@ export function makeAxiosPlus(configureOptions?: ConfigureOptions): AxiosPlus {
 		});
 
 		function refetch(
-			configOverride?: AxiosRequestConfig<TBody> | string,
-			options?: RefetchOptions
+			_configOverride?: AxiosRequestConfig<TBody> | string,
+			_options?: RefetchOptions
 		): AxiosPromise<TResponse> {
-			configOverride = configToObject(configOverride as AxiosRequestConfig<TBody> | string);
+			const configOverride = configToObject(_configOverride || {});
 			return request(
 				withAbortSignal({
-					...config,
+					...getConfig(),
 					...(isEvent(configOverride) ? null : configOverride)
 				}),
-				{ useCache: false, ...options },
+				{ useCache: false, ..._options },
 				state
 			);
 		}
