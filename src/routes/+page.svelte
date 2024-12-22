@@ -18,13 +18,13 @@
 	<li>
 		<a href="/manual-cancellation">Manual Cancellation</a>
 	</li>
+	<li><a href="/page">+page load function</a></li>
+	<li><a href="/page-server">+page.server load function</a></li>
 	<li>
 		<a href="/multiple-hook-instances">Multiple Hook Instances</a>
 	</li>
 	<li>
 		<a href="/reactivity">Reactivity</a>
 	</li>
-	<li><a href="/page">+page load function</a></li>
-	<li><a href="/page-server">+page.server load function</a></li>
 	<li><a href="/playground">Playground</a></li>
 </ul>

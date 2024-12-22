@@ -11,13 +11,17 @@
 		{ manual: true }
 	);
 
-	function updateData() {
-		refetch({
-			data: {
-				...getReq.data,
-				updatedAt: new Date().toISOString()
-			}
-		});
+	async function updateData() {
+		try {
+			await refetch({
+				data: {
+					...getReq.data,
+					updatedAt: new Date().toISOString()
+				}
+			});
+		} catch (error) {
+			// Handle errors
+		}
 	}
 </script>
 

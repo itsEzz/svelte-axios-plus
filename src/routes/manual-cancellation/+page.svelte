@@ -9,17 +9,17 @@
 		})
 	);
 
-	const handleFetch = () => {
+	function handleFetch() {
 		pagination = { ...pagination, page: pagination.page + 1 };
-	};
+	}
 
-	const externalRefetch = async () => {
+	async function externalRefetch() {
 		try {
 			await refetch();
 		} catch (e) {
-			// Handle cancellation
+			// Handle errors
 		}
-	};
+	}
 </script>
 
 <h1>Manual cancellation example</h1>

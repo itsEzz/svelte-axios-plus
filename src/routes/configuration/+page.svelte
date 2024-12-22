@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { configure } from '$lib/index.svelte.js';
+	import axiosPlus, { configure } from '$lib/index.svelte.js';
 	import { LRUCache } from 'lru-cache';
 	import Axios from 'axios';
 
@@ -9,7 +9,8 @@
 
 	const cache = new LRUCache({ max: 10 });
 
-	configure({ axios, cache });
+	configure({ axios, cache }); // configure globally
+	axiosPlus.configure({ axios, cache }); // configure per instance
 </script>
 
 <h1>Configuration example</h1>

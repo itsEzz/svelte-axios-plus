@@ -1,6 +1,9 @@
 <script lang="ts">
 	interface Props {
-		data: any;
+		data: {
+			rdata: any;
+			error: string;
+		};
 	}
 
 	let { data }: Props = $props();

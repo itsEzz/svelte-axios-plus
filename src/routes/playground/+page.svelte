@@ -9,7 +9,7 @@
 	});
 	let force: boolean = $state(false);
 
-	let { req, refetch, cancel, reset } = axiosPlus('https://reqres.in/api/users?delay=1', options);
+	const { req, refetch, cancel, reset } = axiosPlus('https://reqres.in/api/users?delay=1', options);
 
 	async function execRefetch() {
 		try {
