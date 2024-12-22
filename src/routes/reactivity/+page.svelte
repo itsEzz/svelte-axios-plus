@@ -13,7 +13,7 @@
 		refetch: refetchL,
 		cancel: cancelL
 	} = axiosPlus(() => ({
-		url: 'https://reqres.in/api/users?delay=5',
+		url: 'https://reqres.in/api/users?delay=3',
 		params: pagination
 	}));
 
@@ -32,7 +32,7 @@
 		cancel: cancelD
 	} = $derived(
 		axiosPlus({
-			url: 'https://reqres.in/api/users?delay=5',
+			url: 'https://reqres.in/api/users?delay=3',
 			params: pagination
 		})
 	);
@@ -52,7 +52,7 @@
 		cancel: cancelE
 	} = axiosPlus(
 		{
-			url: 'https://reqres.in/api/users?delay=5'
+			url: 'https://reqres.in/api/users?delay=3'
 		},
 		{ manual: true }
 	);
