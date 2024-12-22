@@ -54,13 +54,13 @@ Full documentation for v1 is available in the [v1 Readme](https://github.com/its
 ## Documentation
 
 <!-- no toc -->
-- [API](#api)
-- [axiosPlus](#axiosplus-url--config---url--config-options---options)
-- [resetConfigure](#resetconfigure)
-- [configure](#configure-options)
-- [clearCache](#clearcache)
-- [load](#loadurlconfig-options)
-- [getConfig](#getconfig)
+- [API](#api-)
+- [axiosPlus](axiosplusurl--config----url--config-options----options-)
+- [resetConfigure](#resetconfigure-)
+- [configure](#configureoptions-)
+- [clearCache](#clearcache-)
+- [load](#loadurlconfig-options-)
+- [getConfig](#getconfig-)
 - [makeAxiosPlus](#makeaxiosplus-configureoptions)
   
 
@@ -193,11 +193,11 @@ Preconfigured `axiosPlus` instance with the same methods as the package's named 
 ## Guides
 
 <!-- no toc -->
-- [Configuration](#configuration)
-- [Manual Requests](#manual-requests)
-- [Manual Cancellation](#manual-cancellation)
-- [Server Side Rendering](#server-side-rendering)
-- [Multiple Hook Instances](#multiple-hook-instances)
+- [Configuration](#configuration-)
+- [Manual Requests](#manual-requests-)
+- [Manual Cancellation](#manual-cancellation-)
+- [Server Side Rendering](#server-side-rendering-)
+- [Multiple Hook Instances](#multiple-hook-instances-)
 
 ### Configuration <!-- omit in toc -->
 
