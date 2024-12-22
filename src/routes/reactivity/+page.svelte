@@ -7,6 +7,24 @@
 		pagination = { ...pagination, page: pagination.page + 1 };
 	};
 
+	// Lazy evaluation
+	const {
+		req: reqL,
+		refetch: refetchL,
+		cancel: cancelL
+	} = axiosPlus(() => ({
+		url: 'https://reqres.in/api/users?delay=5',
+		params: pagination
+	}));
+
+	const externalRefetchL = async () => {
+		try {
+			await refetchL();
+		} catch (e) {
+			// Handle cancellation
+		}
+	};
+
 	// Derived method
 	const {
 		req: reqD,
@@ -18,6 +36,7 @@
 			params: pagination
 		})
 	);
+
 	const externalRefetchD = async () => {
 		try {
 			await refetchD();
@@ -65,6 +84,14 @@
 	<button class="btn" onclick={handleFetch}>Change dependency</button>
 	<div class="row">
 		<div class="column">
+			<button onclick={() => externalRefetchL()}>External Refetch (Lazy Evaluation)</button>
+			<button disabled={!reqL.loading} onclick={cancelL}>Cancel Request (Lazy Evaluation)</button>
+			{#if reqL.loading}
+				<p>...loading (Lazy Evaluation)</p>
+			{/if}
+			<pre>{JSON.stringify(reqL.data, null, 2)}</pre>
+		</div>
+		<div class="column">
 			<button onclick={() => externalRefetchD()}>External Refetch (Derived)</button>
 			<button disabled={!reqD.loading} onclick={cancelD}>Cancel Request (Derived)</button>
 			{#if reqD.loading}
@@ -89,7 +116,7 @@
 	}
 
 	.column {
-		flex: 50%;
+		flex: 33%;
 	}
 
 	.btn {
