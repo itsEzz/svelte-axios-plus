@@ -16,8 +16,10 @@ interface RequestState<TResponse = any, TBody = any, TError = any> {
 	response?: AxiosResponse<TResponse, TBody>;
 }
 
-export interface LoadResult<TResponse = any, TBody = any, TError = any>
-	extends Omit<RequestState<TResponse, TBody, TError>, 'loading'> {}
+export type LoadResult<TResponse = any, TBody = any, TError = any> = Omit<
+	RequestState<TResponse, TBody, TError>,
+	'loading'
+>;
 
 export interface AxiosPlusOptions {
 	manual?: boolean;
@@ -44,7 +46,7 @@ export interface RefetchFunction<TBody, TResponse> {
 }
 
 export type AxiosPlusResult<TResponse = any, TBody = any, TError = any> = {
-	req: Readonly<RequestState>;
+	req: Readonly<RequestState<TResponse, TBody, TError>>;
 	refetch: RefetchFunction<TBody, TResponse>;
 	cancel: () => void;
 	reset: (force?: boolean) => void;
