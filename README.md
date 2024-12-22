@@ -55,13 +55,13 @@ Full documentation for v1 is available in the [v1 Readme](https://github.com/its
 
 <!-- no toc -->
 - [API](#api-)
-- [axiosPlus](axiosplusurl--config----url--config-options----options-)
+- [axiosPlus](#axiosplusurl--config----url--config-options----options-)
 - [resetConfigure](#resetconfigure-)
 - [configure](#configureoptions-)
 - [clearCache](#clearcache-)
 - [load](#loadurlconfig-options-)
 - [getConfig](#getconfig-)
-- [makeAxiosPlus](#makeaxiosplus-configureoptions)
+- [makeAxiosPlus](#makeaxiosplusconfigureoptions-)
   
 
 ### API <!-- omit in toc -->
