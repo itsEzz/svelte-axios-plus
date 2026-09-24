@@ -1,6 +1,7 @@
 <script lang="ts">
 	import axios from 'axios';
 	import { makeAxiosPlus } from '$lib/index.svelte.js';
+	import { resolve } from '$app/paths';
 
 	const customAxiosPlus = makeAxiosPlus({
 		axios: axios.create({ baseURL: 'https://reqres.in/api' })
@@ -10,7 +11,7 @@
 </script>
 
 <h1>Multiple hook instances example</h1>
-<a href="/">Back to TOC</a>
+<a href={resolve('/')}>Back to TOC</a>
 
 {#if req.loading}
 	<p>Loading...</p>

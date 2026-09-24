@@ -2,6 +2,7 @@
 	import axiosPlus, { configure } from '$lib/index.svelte.js';
 	import { LRUCache } from 'lru-cache';
 	import Axios from 'axios';
+	import { resolve } from '$app/paths';
 
 	const axios = Axios.create({
 		baseURL: 'https://reqres.in/api'
@@ -14,6 +15,6 @@
 </script>
 
 <h1>Configuration example</h1>
-<a href="/">Back to TOC</a>
+<a href={resolve('/')}>Back to TOC</a>
 
 <p>This example does not offer any output. Please checkout the code itself.</p>
