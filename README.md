@@ -91,14 +91,14 @@ The main function to execute HTTP requests.
 - `options` - Configuration object
   - `manual` (default `false`) - Controls automatic request execution on component render. Use the `refetch` function returned when invoking `axiosPlus` to execute the request manually.
   - `useCache` (default `true`) - Enables/disables request caching. It doesn't affect the `refetch` function returned by `axiosPlus`.
-  - `autoCancel` ( `true` ) - Controls automatic cancellation of pending requests
+  - `autoCancel` (default `true`) - Controls automatic cancellation of pending requests
 
 > [!IMPORTANT]  
 > Default caching behavior can interfere with test isolation. See [testing](#testing) section.
 
 #### Returns <!-- omit in toc -->
 
-An object with the following properties:
+An object with the following properties
 
 - `req` - Request state object
   - `data` - Response data from the axios [success response](https://github.com/axios/axios#response-schema)
@@ -130,13 +130,13 @@ Configures the `axiosPlus` instance with custom options.
 
 #### Parameters <!-- omit in toc -->
 
-- `axios` - Custom [Axios](https://github.com/axios/axios#creating-an-instance) instance or Axios-like client
-- `cache` - [LRU cache](https://github.com/isaacs/node-lru-cache) instance or false to disable caching
-- `defaultOptions` - Default options for all requests. It will be merged with the out of the box default options.
+- `options.axios` - Custom [Axios](https://github.com/axios/axios#creating-an-instance) instance or Axios-like client
+- `options.cache` - [LRU cache](https://github.com/isaacs/node-lru-cache) instance or false to disable caching
+- `options.defaultOptions` - Default options for all requests. It will be merged with the out of the box default options.
   - `manual` - Controls automatic request execution on component render. Use the `refetch` function returned when invoking `axiosPlus` to execute the request manually.
   - `useCache` - Enables/disables request caching. It doesn't affect the `refetch` function returned by `axiosPlus`.
   - `autoCancel` - Controls automatic cancellation of pending requests
-- `defaultLoadOptions` - Default options for `load` function
+- `options.defaultLoadOptions` - Default options for `load` function
   - `useCache` - Enables/disables request caching
 
 ### clearCache() <!-- omit in toc -->
@@ -154,7 +154,7 @@ Performs a one-time request with optional caching.
 
 #### Returns <!-- omit in toc -->
 
-A promise with the following properties:
+A promise with the following properties
 
 - `data` - Response data from the axios [success response](https://github.com/axios/axios#response-schema)
 - `error` - [Error](https://github.com/axios/axios#handling-errors) details if request failed
@@ -166,7 +166,7 @@ Returns the current configured options.
 
 #### Returns <!-- omit in toc -->
 
-An object with the following properties:
+An object with the following properties
 
 - `axios` - Current Axios instance
 - `cache` - Current [LRU cache](https://github.com/isaacs/node-lru-cache) instance or false if disabled
@@ -179,13 +179,13 @@ Creates a new `axiosPlus` instance with optional initial configuration.
 
 #### Parameters <!-- omit in toc -->
 
-- `axios` - Custom [Axios](https://github.com/axios/axios#creating-an-instance) instance or Axios-like client
-- `cache` - [LRU cache](https://github.com/isaacs/node-lru-cache) instance or false to disable caching
-- `defaultOptions` - Default options for all requests. It will be merged with the out of the box default options.
+- `configureOptions.axios` - Custom [Axios](https://github.com/axios/axios#creating-an-instance) instance or Axios-like client
+- `configureOptions.cache` - [LRU cache](https://github.com/isaacs/node-lru-cache) instance or false to disable caching
+- `configureOptions.defaultOptions` - Default options for all requests. It will be merged with the out of the box default options.
   - `manual` - Controls automatic request execution on component render. Use the `refetch` function returned when invoking `axiosPlus` to execute the request manually.
   - `useCache` - Enables/disables request caching. It doesn't affect the `refetch` function returned by `axiosPlus`.
   - `autoCancel` - Controls automatic cancellation of pending requests
-- `defaultLoadOptions` - Default options for `load` function
+- `configureOptions.defaultLoadOptions` - Default options for `load` function
   - `useCache` - Enables/disables request caching
 
 #### Returns <!-- omit in toc -->
