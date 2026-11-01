@@ -48,6 +48,7 @@
 		"axios": ">=1.0.0",
 		"svelte": "^5"
 	},
+	"packageManager": "pnpm@12.16.1",
 	"devDependencies": {
 		"@eslint/js": "^10.0.1",
 		"@sveltejs/adapter-auto": "^8.0.0",
