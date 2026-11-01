@@ -1,6 +1,6 @@
 import StaticAxios from 'axios';
 import { LRUCache } from 'lru-cache';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vite-plus/test';
 import axiosPlus, {
 	clearCache,
 	configure,
