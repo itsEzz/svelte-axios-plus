@@ -2,7 +2,7 @@ import axiosPlus from '#lib/index.svelte.js';
 
 interface PageLoad {
 	(): Promise<{
-		rdata: any;
+		rdata: unknown;
 		error: string;
 	}>;
 }

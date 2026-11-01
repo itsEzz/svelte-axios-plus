@@ -3,7 +3,7 @@
 
 	interface Props {
 		data: {
-			rdata: any;
+			rdata: unknown;
 			error: string;
 		};
 	}

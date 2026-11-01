@@ -2,7 +2,7 @@
 	import { resolve } from '$app/paths';
 	import axiosPlus from '#lib/index.svelte.js';
 
-	const { req: getReq } = axiosPlus('https://reqres.in/api/users/1');
+	const { req: getReq } = axiosPlus<Record<string, unknown>>('https://reqres.in/api/users/1');
 
 	const { req: putReq, refetch } = axiosPlus(
 		{
