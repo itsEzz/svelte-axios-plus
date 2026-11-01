@@ -1,4 +1,4 @@
-import StaticAxios from 'axios';
+import StaticAxios, { AxiosHeaders, type AxiosAdapter, type AxiosResponse } from 'axios';
 import { LRUCache } from 'lru-cache';
 import { beforeEach, describe, expect, it, vi } from 'vite-plus/test';
 import axiosPlus, {
@@ -11,6 +11,25 @@ import axiosPlus, {
 } from '../src/lib/index.svelte.js';
 import { flushSync } from 'svelte';
 
+const mockResponse: AxiosResponse = {
+	data: 'whatever',
+	status: 200,
+	statusText: 'OK',
+	headers: new AxiosHeaders(),
+	config: { headers: new AxiosHeaders() }
+};
+
+function createMockAxios() {
+	const adapter = vi.fn<AxiosAdapter>(async (config) => ({
+		...mockResponse,
+		config
+	}));
+	return {
+		axios: StaticAxios.create({ adapter }),
+		adapter
+	};
+}
+
 const defaultConfig = {
 	axios: StaticAxios,
 	cache: new LRUCache({ max: 500, ttl: 1000 * 60 }),
@@ -19,7 +38,7 @@ const defaultConfig = {
 };
 
 let testConfig = {
-	axios: vi.fn().mockResolvedValueOnce({ data: 'whatever' }),
+	axios: createMockAxios().axios,
 	cache: new LRUCache({ max: 5, ttl: 1000 * 60 }),
 	defaultOptions: { manual: true, useCache: false, autoCancel: false },
 	defaultLoadOptions: { useCache: false }
@@ -28,7 +47,7 @@ let testConfig = {
 beforeEach(() => {
 	resetConfigure();
 	testConfig = {
-		axios: vi.fn().mockResolvedValueOnce({ data: 'whatever' }),
+		axios: createMockAxios().axios,
 		cache: new LRUCache({ max: 5, ttl: 1000 * 60 }),
 		defaultOptions: { manual: true, useCache: false, autoCancel: false },
 		defaultLoadOptions: { useCache: false }
@@ -41,17 +60,17 @@ describe('makeAxiosPlus', () => {
 	});
 
 	it('should not throw', () => {
-		expect(makeAxiosPlus).not.toThrowError();
+		expect(makeAxiosPlus).not.toThrow();
 	});
 
 	it('should accept own axios instance', () => {
-		const mockAxios = vi.fn().mockResolvedValueOnce({ data: 'whatever' });
+		const mockAxios = createMockAxios();
 
-		const axiosPlusTest = makeAxiosPlus({ axios: mockAxios });
+		const axiosPlusTest = makeAxiosPlus({ axios: mockAxios.axios });
 
 		const config = axiosPlusTest.getConfig();
 
-		expect(config.axios).toEqual(mockAxios);
+		expect(config.axios).toEqual(mockAxios.axios);
 	});
 
 	it('should accept own lru cache instance', () => {
@@ -95,7 +114,7 @@ describe('configure', () => {
 	});
 
 	it('should not throw', () => {
-		expect(configure).not.toThrowError();
+		expect(configure).not.toThrow();
 	});
 
 	it('should overwrite the config', () => {
@@ -115,7 +134,7 @@ describe('resetConfigure', () => {
 	});
 
 	it('should not throw', () => {
-		expect(resetConfigure).not.toThrowError();
+		expect(resetConfigure).not.toThrow();
 	});
 
 	it('should reset the config', () => {
@@ -140,7 +159,7 @@ describe('clearCache', () => {
 	});
 
 	it('should not throw', () => {
-		expect(clearCache).not.toThrowError();
+		expect(clearCache).not.toThrow();
 	});
 
 	it('should clear cache', async () => {
@@ -166,7 +185,7 @@ describe('getConfig', () => {
 	});
 
 	it('should not throw', () => {
-		expect(getConfig).not.toThrowError();
+		expect(getConfig).not.toThrow();
 	});
 
 	it('should return correct config', () => {
@@ -184,24 +203,24 @@ describe('load', () => {
 	});
 
 	it('should not throw', () => {
-		expect(load).not.toThrowError();
+		expect(load).not.toThrow();
 	});
 
 	describe('cache enabled', () => {
 		it('should return cached data', async () => {
-			const mockAxios = vi.fn().mockResolvedValueOnce({ data: 'whatever' });
-			configure({ axios: mockAxios });
+			const mockAxios = createMockAxios();
+			configure({ axios: mockAxios.axios });
 
 			await load('test');
 			await load('test');
 
-			expect(mockAxios).toHaveBeenCalledTimes(1);
+			expect(mockAxios.adapter).toHaveBeenCalledTimes(1);
 		});
 
 		it('should not return cached data after expiration', async () => {
-			const mockAxios = vi.fn().mockResolvedValueOnce({ data: 'whatever' });
+			const mockAxios = createMockAxios();
 			configure({
-				axios: mockAxios,
+				axios: mockAxios.axios,
 				cache: new LRUCache({ max: 5, ttl: 50 })
 			});
 
@@ -209,7 +228,7 @@ describe('load', () => {
 			await new Promise((r) => setTimeout(r, 55));
 			await load('test');
 
-			expect(mockAxios).toHaveBeenCalledTimes(2);
+			expect(mockAxios.adapter).toHaveBeenCalledTimes(2);
 		});
 	});
 
@@ -219,10 +238,8 @@ describe('load', () => {
 		});
 
 		it('should return data and response and no error', async () => {
-			const mockAxios = vi
-				.fn()
-				.mockResolvedValueOnce({ data: 'whatever', status: 200, headers: {}, config: {} });
-			configure({ axios: mockAxios });
+			const mockAxios = createMockAxios();
+			configure({ axios: mockAxios.axios });
 
 			const { data, error, response } = await load('test');
 
@@ -236,30 +253,27 @@ describe('load', () => {
 		});
 
 		it('should not cache data', async () => {
-			const mockAxios = vi
-				.fn()
-				.mockResolvedValueOnce({ data: 'whatever', status: 200, headers: {}, config: {} });
-			configure({ axios: mockAxios });
+			const mockAxios = createMockAxios();
+			configure({ axios: mockAxios.axios });
 
 			await load('test');
 			await load('test');
 
-			expect(mockAxios).toBeCalledTimes(2);
+			expect(mockAxios.adapter).toHaveBeenCalledTimes(2);
 		});
 
 		it('should return error and no response and no data', async () => {
-			const mockAxios = vi.fn().mockImplementation(() => {
-				throw {
-					isAxiosError: true,
-					response: {
-						status: 404,
-						statusText: 'Not Found',
-						data: { message: 'Resource not found' }
-					},
-					message: 'Request failed with status code 404'
-				};
+			const mockAxios = createMockAxios();
+			mockAxios.adapter.mockRejectedValueOnce({
+				isAxiosError: true,
+				response: {
+					status: 404,
+					statusText: 'Not Found',
+					data: { message: 'Resource not found' }
+				},
+				message: 'Request failed with status code 404'
 			});
-			configure({ axios: mockAxios });
+			configure({ axios: mockAxios.axios });
 
 			const { data, error, response } = await load('test');
 
@@ -278,7 +292,7 @@ describe('load', () => {
 describe('axiosPlus', () => {
 	beforeEach(() => {
 		configure({
-			axios: vi.fn().mockResolvedValueOnce({ data: 'whatever' }),
+			axios: createMockAxios().axios,
 			cache: false
 		});
 	});
@@ -289,7 +303,7 @@ describe('axiosPlus', () => {
 
 	it('should not throw', () => {
 		const cleanup = $effect.root(() => {
-			expect(axiosPlus).not.toThrowError();
+			expect(axiosPlus).not.toThrow();
 		});
 		cleanup();
 	});
