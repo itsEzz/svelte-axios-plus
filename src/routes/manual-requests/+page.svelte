@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
-	import axiosPlus from '$lib/index.svelte.js';
+	import axiosPlus from '#lib/index.svelte.js';
 
 	const { req: getReq } = axiosPlus('https://reqres.in/api/users/1');
 
@@ -27,7 +27,7 @@
 </script>
 
 <h1>Manual requests example</h1>
-<a href={resolve('/')}>Back to TOC</a>
+<a href={resolve('')}>Back to TOC</a>
 
 {#if getReq.loading || putReq.loading}
 	<p>Loading...</p>

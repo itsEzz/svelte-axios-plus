@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
-	import axiosPlus, { clearCache, type AxiosPlusOptions } from '$lib/index.svelte.js';
+	import axiosPlus, { clearCache, type AxiosPlusOptions } from '#lib/index.svelte.js';
 	import { isAxiosError, isCancel } from 'axios';
 
 	let options: AxiosPlusOptions = $state({
@@ -26,7 +26,7 @@
 </script>
 
 <h1>Playground example</h1>
-<a href={resolve('/')}>Back to TOC</a>
+<a href={resolve('')}>Back to TOC</a>
 <br />
 <input type="checkbox" id="manual" name="manual" bind:checked={options.manual} />
 <label for="manual"> Manual request</label><br />

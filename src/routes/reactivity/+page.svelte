@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
-	import axiosPlus from '$lib/index.svelte.js';
+	import axiosPlus from '#lib/index.svelte.js';
 
 	let pagination: Record<string, number> = $state({ per_page: 6, page: 1 });
 
@@ -79,7 +79,7 @@
 </script>
 
 <h1>Reactivity example</h1>
-<a href={resolve('/')}>Back to TOC</a>
+<a href={resolve('')}>Back to TOC</a>
 
 <div>
 	<button class="btn" onclick={handleFetch}>Change dependency</button>

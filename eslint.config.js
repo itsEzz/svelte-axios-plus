@@ -1,5 +1,5 @@
-import svelteConfig from './svelte.config.js';
-import { defineConfig } from 'eslint/config';
+import svelteConfiimport { loadConfig } from '@sveltejs/load-config';
+const svelteConfig = (await loadConfig('./', { traverse: false }))?.config;nfig } from 'eslint/config';
 import globals from 'globals';
 import js from '@eslint/js';
 import ts from 'typescript-eslint';
