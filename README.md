@@ -378,7 +378,8 @@ In Svelte you can load data for your page via the `+page.server.ts` file. The lo
    	let { data }: Props = $props();
    </script>
 
-   <pre>Data: {JSON.stringify(data.rdata, null, 2)}</pre><p>Error: {data.error}</p>
+   <pre>Data: {JSON.stringify(data.rdata, null, 2)}</pre>
+   <p>Error: {data.error}</p>
    ```
 
    [Ref](https://github.com/itsEzz/svelte-axios-plus/tree/master/src/routes/page-server)
