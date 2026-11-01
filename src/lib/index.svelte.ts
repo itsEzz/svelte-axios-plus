@@ -9,14 +9,18 @@ import StaticAxios, {
 } from 'axios';
 import { LRUCache } from 'lru-cache';
 
-interface RequestState<TResponse = any, TBody = any, TError = any> {
+type AxiosClient = AxiosInstance | AxiosStatic;
+type CacheKey = NonNullable<unknown>;
+type CacheValue = NonNullable<unknown>;
+
+interface RequestState<TResponse = unknown, TBody = unknown, TError = unknown> {
 	loading: boolean;
 	data?: TResponse;
 	error: AxiosError<TError, TBody> | null;
 	response?: AxiosResponse<TResponse, TBody>;
 }
 
-export type LoadResult<TResponse = any, TBody = any, TError = any> = Omit<
+export type LoadResult<TResponse = unknown, TBody = unknown, TError = unknown> = Omit<
 	RequestState<TResponse, TBody, TError>,
 	'loading'
 >;
@@ -32,8 +36,8 @@ export interface RefetchOptions {
 }
 
 export interface ConfigureOptions {
-	axios?: AxiosInstance | AxiosStatic | any;
-	cache?: LRUCache<any, any> | false;
+	axios?: AxiosClient;
+	cache?: LRUCache<CacheKey, CacheValue> | false;
 	defaultOptions?: AxiosPlusOptions;
 	defaultLoadOptions?: RefetchOptions;
 }
@@ -45,7 +49,7 @@ export interface RefetchFunction<TBody, TResponse> {
 	): AxiosPromise<TResponse>;
 }
 
-export type AxiosPlusResult<TResponse = any, TBody = any, TError = any> = {
+export type AxiosPlusResult<TResponse = unknown, TBody = unknown, TError = unknown> = {
 	req: Readonly<RequestState<TResponse, TBody, TError>>;
 	refetch: RefetchFunction<TBody, TResponse>;
 	cancel: () => void;
@@ -77,7 +81,7 @@ export interface AxiosPlus {
 	 *   method: 'POST'
 	 * }, { manual: true })
 	 */
-	<TResponse = any, TBody = any, TError = any>(
+	<TResponse = unknown, TBody = unknown, TError = unknown>(
 		config: AxiosRequestConfig<TBody> | string | (() => AxiosRequestConfig<TBody> | string),
 		options?: AxiosPlusOptions | (() => AxiosPlusOptions)
 	): AxiosPlusResult<TResponse, TBody, TError>;
@@ -106,7 +110,8 @@ export interface AxiosPlus {
 	 *   data: { id: 1 }
 	 * })
 	 */
-	load<TResponse = any, TBody = any, TError = any>(
+	load<TResponse = unknown, TBody = unknown, TError = unknown>(
+		this: void,
 		config: AxiosRequestConfig<TBody> | string,
 		options?: RefetchOptions
 	): Promise<Omit<RequestState<TResponse, TBody, TError>, 'loading'>>;
@@ -114,8 +119,8 @@ export interface AxiosPlus {
 	 * Configures the axios-plus instance with custom options
 	 *
 	 * @param {ConfigureOptions} [options] - Configuration options object
-	 * @param {(AxiosInstance | AxiosStatic | any)} [options.axios] - Custom Axios instance or Axios-like client
-	 * @param {(LRUCache<any, any> | false)} [options.cache] - LRU cache instance or false to disable caching
+	 * @param {AxiosClient} [options.axios] - Custom Axios instance or Axios-like client
+	 * @param {(LRUCache<CacheKey, CacheValue> | false)} [options.cache] - LRU cache instance or false to disable caching
 	 * @param {AxiosPlusOptions} [options.defaultOptions] - Default options for all requests
 	 * @param {boolean} [options.defaultOptions.manual] - If true, requests won't fire automatically
 	 * @param {boolean} [options.defaultOptions.useCache] - If true, enables response caching
@@ -147,7 +152,7 @@ export interface AxiosPlus {
 	 *   }
 	 * })
 	 */
-	configure(options?: ConfigureOptions): void;
+	configure(this: void, options?: ConfigureOptions): void;
 	/**
 	 * Resets all configuration options back to default values
 	 *
@@ -163,7 +168,7 @@ export interface AxiosPlus {
 	 * // Reset to default configuration
 	 * resetConfigure()
 	 */
-	resetConfigure(): void;
+	resetConfigure(this: void): void;
 	/**
 	 * Clears the current LRU cache if caching is enabled
 	 *
@@ -173,7 +178,7 @@ export interface AxiosPlus {
 	 * // Clear all cached responses
 	 * clearCache()
 	 */
-	clearCache(): void;
+	clearCache(this: void): void;
 	/**
 	 * Returns the current configured options
 	 *
@@ -188,17 +193,17 @@ export interface AxiosPlus {
 	 * const config = getConfig()
 	 * console.log(config.defaultOptions)
 	 */
-	getConfig(): AxiosPlusConfig;
+	getConfig(this: void): AxiosPlusConfig;
 }
 
 export interface AxiosPlusConfig {
-	readonly axios: AxiosInstance | AxiosStatic | any;
-	readonly cache: LRUCache<any, any> | false;
+	readonly axios: AxiosClient;
+	readonly cache: LRUCache<CacheKey, CacheValue> | false;
 	readonly defaultOptions: AxiosPlusOptions;
 	readonly defaultLoadOptions: RefetchOptions;
 }
 
-interface Action<TResponse = any, TBody = any, TError = any> {
+interface Action<TResponse = unknown, TBody = unknown, TError = unknown> {
 	type: string;
 	payload?: AxiosResponse<TResponse, TBody> | AxiosError<TError, TBody>;
 	error?: boolean;
@@ -227,7 +232,7 @@ export default axiosPlus;
 
 export const { resetConfigure, configure, clearCache, load, getConfig } = axiosPlus;
 
-function isEvent(obj: any): boolean {
+function isEvent(obj: unknown): boolean {
 	return obj instanceof Event;
 }
 
@@ -262,8 +267,8 @@ function optionsToObject(
  * Creates a new axios-plus instance with optional initial configuration
  *
  * @param {ConfigureOptions} [configureOptions] - Initial configuration options
- * @param {(AxiosInstance | AxiosStatic | any)} [configureOptions.axios] - Custom Axios instance or Axios-like client
- * @param {(LRUCache<any, any> | false)} [configureOptions.cache] - LRU cache instance or false to disable caching
+ * @param {AxiosClient} [configureOptions.axios] - Custom Axios instance or Axios-like client
+ * @param {(LRUCache<CacheKey, CacheValue> | false)} [configureOptions.cache] - LRU cache instance or false to disable caching
  * @param {AxiosPlusOptions} [configureOptions.defaultOptions] - Default options for all requests
  * @param {boolean} [configureOptions.defaultOptions.manual] - If true, requests won't fire automatically
  * @param {boolean} [configureOptions.defaultOptions.useCache] - If true, enables response caching
@@ -288,7 +293,7 @@ function optionsToObject(
  * })
  */
 export function makeAxiosPlus(configureOptions?: ConfigureOptions): AxiosPlus {
-	let cache: LRUCache<any, any> | false;
+	let cache: LRUCache<CacheKey, CacheValue> | false;
 	let axiosInstance: AxiosInstance;
 	let defaultOptions: AxiosPlusOptions;
 	let defaultLoadOptions: RefetchOptions;
@@ -352,14 +357,16 @@ export function makeAxiosPlus(configureOptions?: ConfigureOptions): AxiosPlus {
 
 		const cacheKey = createCacheKey(config);
 
-		const { config: responseConfig, request, ...responseForCache } = response;
+		const { config: _config, request: _request, ...responseForCache } = response;
 
 		cache.set(cacheKey, responseForCache);
 	}
 
-	function createInitialState(config: AxiosRequestConfig, options: AxiosPlusOptions): RequestState {
-		const response =
-			!options.manual && (tryGetFromCache(config, options) as AxiosResponse | undefined);
+	function createInitialState<TResponse, TBody, TError>(
+		config: AxiosRequestConfig,
+		options: AxiosPlusOptions
+	): RequestState<TResponse, TBody, TError> {
+		const response = !options.manual && tryGetFromCache<TResponse, TBody, TError>(config, options);
 
 		return {
 			loading: !options.manual && !response,
@@ -368,7 +375,10 @@ export function makeAxiosPlus(configureOptions?: ConfigureOptions): AxiosPlus {
 		};
 	}
 
-	function updateState(state: RequestState, action: Action): void {
+	function updateState<TResponse, TBody, TError>(
+		state: RequestState<TResponse, TBody, TError>,
+		action: Action<TResponse, TBody, TError>
+	): void {
 		switch (action.type) {
 			case actions.REQUEST_START:
 				state.loading = true;
@@ -376,11 +386,11 @@ export function makeAxiosPlus(configureOptions?: ConfigureOptions): AxiosPlus {
 				break;
 			case actions.REQUEST_END:
 				if (!action.error) {
-					state.data = (action.payload as AxiosResponse).data;
+					state.data = (action.payload as AxiosResponse<TResponse, TBody>).data;
 					state.error = null;
-					state.response = action.payload as AxiosResponse;
+					state.response = action.payload as AxiosResponse<TResponse, TBody>;
 				} else {
-					state.error = action.payload as AxiosError;
+					state.error = action.payload as AxiosError<TError, TBody>;
 				}
 				state.loading = false;
 				break;
@@ -396,17 +406,17 @@ export function makeAxiosPlus(configureOptions?: ConfigureOptions): AxiosPlus {
 		}
 	}
 
-	function tryGetFromCache(
+	function tryGetFromCache<TResponse, TBody, TError>(
 		config: AxiosRequestConfig,
 		options: AxiosPlusOptions,
-		state?: RequestState
-	): AxiosResponse | void {
+		state?: RequestState<TResponse, TBody, TError>
+	): AxiosResponse<TResponse, TBody> | void {
 		if (!cache || !options.useCache) {
 			return;
 		}
 
 		const cacheKey = createCacheKey(config);
-		const response = cache.get(cacheKey);
+		const response = cache.get(cacheKey) as AxiosResponse<TResponse, TBody> | undefined;
 
 		if (response && state) {
 			updateState(state, { type: actions.REQUEST_END, payload: response });
@@ -415,10 +425,10 @@ export function makeAxiosPlus(configureOptions?: ConfigureOptions): AxiosPlus {
 		return response;
 	}
 
-	async function executeRequest(
+	async function executeRequest<TResponse, TBody, TError>(
 		config: AxiosRequestConfig,
-		state: RequestState
-	): Promise<AxiosResponse> {
+		state: RequestState<TResponse, TBody, TError>
+	): Promise<AxiosResponse<TResponse, TBody>> {
 		try {
 			updateState(state, { type: actions.REQUEST_START });
 
@@ -433,7 +443,7 @@ export function makeAxiosPlus(configureOptions?: ConfigureOptions): AxiosPlus {
 			if (!isCancel(err)) {
 				updateState(state, {
 					type: actions.REQUEST_END,
-					payload: err as AxiosError,
+					payload: err as AxiosError<TError, TBody>,
 					error: true
 				});
 			} else if (isCancel(err)) {
@@ -443,11 +453,11 @@ export function makeAxiosPlus(configureOptions?: ConfigureOptions): AxiosPlus {
 		}
 	}
 
-	async function request(
+	async function request<TResponse, TBody, TError>(
 		config: AxiosRequestConfig,
 		options: AxiosPlusOptions,
-		state: RequestState
-	): Promise<AxiosResponse> {
+		state: RequestState<TResponse, TBody, TError>
+	): Promise<AxiosResponse<TResponse, TBody>> {
 		return tryGetFromCache(config, options, state) || executeRequest(config, state);
 	}
 
@@ -457,7 +467,7 @@ export function makeAxiosPlus(configureOptions?: ConfigureOptions): AxiosPlus {
 	): Promise<LoadResult<TResponse, TBody, TError>> {
 		const config = configToObject(_config);
 		const options = { ...defaultLoadOptions, ..._options };
-		const cachedResponse = tryGetFromCache(config, options);
+		const cachedResponse = tryGetFromCache<TResponse, TBody, TError>(config, options);
 		if (options.useCache && cachedResponse) {
 			return { data: cachedResponse.data, error: null, response: cachedResponse };
 		}
@@ -487,7 +497,7 @@ export function makeAxiosPlus(configureOptions?: ConfigureOptions): AxiosPlus {
 		}
 
 		const state = $state<RequestState<TResponse, TBody, TError>>(
-			createInitialState(getConfig(), getOptions())
+			createInitialState<TResponse, TBody, TError>(getConfig(), getOptions())
 		);
 
 		function cancelOutstandingRequest(): void {
